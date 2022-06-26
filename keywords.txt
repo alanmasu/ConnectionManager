@@ -1,0 +1,62 @@
+#######################################
+# Syntax Coloring Map For ConnectionManager
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+ConnectionManager	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+startConnection		KEYWORD2
+get 			KEYWORD2
+getState 		KEYWORD2
+getOTAHostname 		KEYWORD2
+setAutoReconnect 	KEYWORD2
+setMaxInitialTimeout 	KEYWORD2
+setReconnectTimeout 	KEYWORD2
+setWPSBlinkInterval 	KEYWORD2
+setWPSSpech 		KEYWORD2
+setRebootOptions 	KEYWORD2
+setOnRebootCallback 	KEYWORD2
+setVersion 		KEYWORD2
+setOTAHostname 		KEYWORD2
+void setServer 		KEYWORD2
+setDefaultWPSConfig 	KEYWORD2
+setStaticIPAddress 	KEYWORD2
+configButton 		KEYWORD2
+startConnection 	KEYWORD2
+startWiFi 		KEYWORD2
+startOTA 		KEYWORD2
+startWebServer 		KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+#	LITERAL
+FIRST_CONNECTION	LITERAL1
+CONNECTED	LITERAL1
+DISCONNECTED	LITERAL1
+NOT_CONNECTED	LITERAL1
+WPS_CONNECTION	LITERAL1
+WPS_FAILED	LITERAL1
+WPS_TIMEOUT	LITERAL1
+PULLUP	LITERAL1
+PULLDOWN	LITERAL1
+CONN_BUTTON_PIN	LITERAL1
+CONNECTION_LED_PIN	LITERAL1
+WIFI_RECONNECT_INTERVAL	LITERAL1
+WPS_BLINK_INTERVAL 	LITERAL1
+CONN_BUTTON_PIN_MODE	LITERAL1
+CONN_BUTTON_MODE	LITERAL1
+CONN_FIRST_INTERVAL	LITERAL1
+RECONNECTION_MAX_TIMES	LITERAL1
+DISCONNECTED_MAX_TIME	LITERAL1
+WIFI_MAX_INITIAL_TIMEOUT	LITERAL1
+REBOOT_ON_NOT_RECONNECTION_FOR_RETRIES	LITERAL1
+REBOOT_ON_NOT_RECONNECTION_FOR_TIME	LITERAL1
