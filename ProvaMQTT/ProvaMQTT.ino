@@ -1,4 +1,5 @@
-#include "MQTTManager.h"
+#include "C:/Users/alanm/Documents/GitHub/ESP32/ConnectionManager/ConnectionManager/MQTTManager.h"
+#include <WebServer.h>
 
 MQTTManager prova;
 
@@ -15,17 +16,17 @@ void setup() {
   Serial.println("Versione: " + ver);
 //  esp_log_level_set("wifi", ESP_LOG_VERBOSE); 
 //  Serial.setDebugOutput(true);
-  prova.setVersion(ver);
-  prova.setServer(&server, true);
-  //prova.startConnection();
-  //prova.startWiFi("alan-PC", "alanmasu2001"); //91200320322799493328
-  prova.startWiFi("FRITZ!Box 7490", "91200320322799493328");
-  prova.startWebServer();
-  prova.setOTAHostname("prova");
-  prova.startOTA();
-  prova.setOnRebootCallback(provaCallback);
-  prova.setRebootOptions(false, true);
-  Serial.println("Or: " + prova.getOTAHostname() + ".local/");
+
+//  prova.setVersion(ver);
+//  prova.setServer(&server, true);
+//  //prova.startConnection();
+//  prova.startWiFi("Alan", "alanmasu2001");
+//  prova.startWebServer();
+//  prova.setOTAHostname("prova");
+//  prova.startOTA();
+//  prova.setOnRebootCallback(provaCallback);
+//  prova.setRebootOptions(false, true);
+//  Serial.println("You can reach me olso at: " + prova.getOTAHostname() + ".local/");
   
 }
 
