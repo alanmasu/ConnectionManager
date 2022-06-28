@@ -8,6 +8,8 @@
 
 ConnectionManager	KEYWORD1
 
+MQTTManager	KEYWORD1
+
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
