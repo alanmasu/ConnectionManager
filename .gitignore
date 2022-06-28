@@ -1,6 +1,6 @@
 #Cartelle
-ProvaMQTT
+Test
 
 #File
-ProvaMQTT2/*.h
-ProvaMQTT2/*.cpp
+examples/BasicMQTT/*.h
+examples/BasicMQTT/*.cpp
