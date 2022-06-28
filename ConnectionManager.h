@@ -61,10 +61,11 @@
 #define CONN_BUTTON_PIN_MODE INPUT			  //Modalita pin di controllo
 #define CONN_BUTTON_MODE PULLUP				    //Modalita di lettura pin di controllo
 #define CONN_BUTTON_FIRST_INTERVAL 3000		//Primo scatto del pulsante di connessione
+
 #define REBOOT_ON_NOT_RECONNECTION_FOR_RETRIES false	//Modalita di reboot dopo aver raggiunto il max tentativo di riconnesione
-#define RECONNECTION_MAX_TIMES 15					//Numero di tentativi
+#define MAX_RECONNECTION_TIMES 15					//Numero di tentativi
 #define REBOOT_ON_NOT_RECONNECTION_FOR_TIME false		  //Modalita di reboot dopo aver raggiunto il tempo di disc. max
-#define DISCONNECTED_MAX_TIME 10 * MIN 		//Numero di tentativi
+#define MAX_DISCONNECTED_TIME 10 * MIN 		//Numero di tentativi
 
 //Costanti di stato
 #define FIRST_CONNECTION 0
@@ -102,8 +103,8 @@ class ConnectionManager {
     void setWPSSpech(const esp_wps_config_t *spech);
     void setRebootOptions(bool forTime = REBOOT_ON_NOT_RECONNECTION_FOR_TIME,
                           bool forRetries = REBOOT_ON_NOT_RECONNECTION_FOR_RETRIES,
-                          uint16_t max_time = DISCONNECTED_MAX_TIME,
-                          uint32_t max_retries = RECONNECTION_MAX_TIMES);
+                          uint16_t max_time = MAX_DISCONNECTED_TIME,
+                          uint32_t max_retries = MAX_RECONNECTION_TIMES);
     void setOnRebootCallback(void (*callback)(void));
     void setVersion(String ver);								//done
     void setOTAHostname(String h);							//done

@@ -38,10 +38,10 @@ ConnectionManager::ConnectionManager(  bool autoReconnect,
 
   //Reboot
   RebootOnReconectionMaxTimes = REBOOT_ON_NOT_RECONNECTION_FOR_RETRIES;
-  maxReconnetcRetries = RECONNECTION_MAX_TIMES;
+  maxReconnetcRetries = MAX_RECONNECTION_TIMES;
   reconnectionTimes = 0;
   RebootOnReconectionMaxTime = REBOOT_ON_NOT_RECONNECTION_FOR_TIME;
-  maxDisconnectedTime = DISCONNECTED_MAX_TIME;
+  maxDisconnectedTime = MAX_DISCONNECTED_TIME;
   lastWiFiConnectedIstant = 0;
   onRebootCallback = NULL;
 }

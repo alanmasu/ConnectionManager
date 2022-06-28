@@ -6,24 +6,16 @@
 #include <PubSubClient.h>
 
 //Costruttori
-MQTTManager::MQTTManager(): ConnectionManager() { //L'unico che funziona
+MQTTManager::MQTTManager():
+  MQTTManager(true,
+              CONNECTION_LED_PIN,
+              WIFI_MAX_INITIAL_TIMEOUT,
+              WIFI_RECONNECT_INTERVAL,
+              WPS_BLINK_INTERVAL,
+              CONN_BUTTON_PIN,
+              CONN_BUTTON_PIN_MODE,
+              CONN_BUTTON_MODE) {}
 
-  MQTTIntervalTraConnetion = MQTT_RECONNECT_INTERVAL;
-  MQTTLastConnectionIstant = 0;
-
-  //intervalli per il reboot
-  RebootOnMQTTReconectionMaxTimes = REBOOT_ON_NOT_MQTT_RECONNECTION_FOR_RETRIES;
-  MQTTReconnectionTimes = 0;
-  maxMQTTReconnetcRetries = MQTT_RECONNECTION_MAX_TIMES;
-  RebootOnMQTTReconectionMaxTime = REBOOT_ON_NOT_MQTT_RECONNECTION_FOR_TIME;
-  maxMQTTDisconnectedTime = MAX_MQTT_DISCONNECTED_TIME;
-  lastMQTTConnectedIstant = 0;
-
-  _name = "";
-  MQTTServer = NULL;
-  MqttDisconnectedBlinkInterval = MQTT_DISCONNECTED_BLINK_INTERVAL;
-  topicsLen = 0;
-}
 
 MQTTManager::MQTTManager(bool autoReconnect,
                          byte connection_led_pin,
@@ -41,24 +33,35 @@ MQTTManager::MQTTManager(bool autoReconnect,
                                conn_button_pin_mode,
                                conn_button_mode)
 {
+  MQTTIntervalTraConnetion = MQTT_RECONNECT_INTERVAL;
+  MQTTLastConnectionIstant = 0;
+
+  //intervalli per il reboot
+  RebootOnMQTTReconectionMaxTimes = REBOOT_ON_NOT_MQTT_RECONNECTION_FOR_RETRIES;
+  maxMQTTReconnetcRetries = MAX_MQTT_RECONNECTION_TIMES;
+  RebootOnMQTTReconectionMaxTime = REBOOT_ON_NOT_MQTT_RECONNECTION_FOR_TIME;
+  maxMQTTDisconnectedTime = MAX_MQTT_DISCONNECTED_TIME;
+  MQTTReconnectionTimes = 0;
+  lastMQTTConnectedIstant = 0;
   _name = "";
   MQTTServer = NULL;
   MqttDisconnectedBlinkInterval = MQTT_DISCONNECTED_BLINK_INTERVAL;
+  topicsLen = 0;
 }
 
 String MQTTManager::getStringState() {
-      String tmp = ConnectionManager::getStringState();
-      if (tmp == "" || tmp == "CONNECTED") {
-        switch (_state) {
-          case MQTT_CONNECTED: return "MQTT_CONNECTED";
-          case MQTT_DISCONNECTED: return "MQTT_DISCONNECTED";
-          case MQTT_SUBSCRIBE_FAILED: return "MQTT_SUBSCRIBE_FAILED";
-          default: return String(_state);
-        }
-      } else {
-        return tmp;
-      }
+  String tmp = ConnectionManager::getStringState();
+  if (tmp == "" || tmp == "CONNECTED") {
+    switch (_state) {
+      case MQTT_CONNECTED: return "MQTT_CONNECTED";
+      case MQTT_DISCONNECTED: return "MQTT_DISCONNECTED";
+      case MQTT_SUBSCRIBE_FAILED: return "MQTT_SUBSCRIBE_FAILED";
+      default: return String(_state);
     }
+  } else {
+    return tmp;
+  }
+}
 
 
 //METODI
@@ -94,6 +97,20 @@ void MQTTManager::setCallback(MQTT_CALLBACK_SIGNATURE) {
 void MQTTManager::setTopics(String* topics, uint16_t len) {
   this->topics = topics;
   topicsLen = len;
+}
+
+void MQTTManager::setDisconnectBlink(uint16_t interval) {
+  MqttDisconnectedBlinkInterval = interval;
+}
+
+void MQTTManager::setRebootOptions(bool forTime,     bool forRetries,     uint16_t max_time,     uint32_t max_retries, 
+                                   bool forMQTTTime, bool forMQTTRetries, uint16_t maxMQTTTtime, uint32_t maxMQTTRetries) {
+  ConnectionManager::setRebootOptions(forTime, forRetries, max_time, max_retries);
+  
+  RebootOnMQTTReconectionMaxTimes = forMQTTRetries;
+  maxMQTTReconnetcRetries = maxMQTTRetries;
+  RebootOnMQTTReconectionMaxTime = forMQTTTime;
+  maxMQTTDisconnectedTime = maxMQTTTtime;
 }
 
 byte MQTTManager::startMQTT() {
