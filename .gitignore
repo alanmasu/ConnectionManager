@@ -1,3 +1,6 @@
 #Cartelle
+ProvaMQTT
 
 #File
+ProvaMQTT2/*.h
+ProvaMQTT2/*.cpp
