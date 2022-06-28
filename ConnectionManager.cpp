@@ -1,16 +1,4 @@
-/*
-    Connection Manager created by Alan Masutti on 04th Jan 2021
-                                   Last modify on 08th May 2021
-      Ver 2.1 based on ESP32
-
-      Notes:
-        - Created task handler for connection loop supervisor
-        - Blinker timer corrected
-        - MQTT added
-*/
-
 #include "ConnectionManager.h"
-
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
@@ -66,12 +54,25 @@ String ConnectionManager::getOTAHostname()const {
   return OTAHostname;
 }
 
-String ConnectionManager::toString()const{
+String ConnectionManager::toString()const {
   return String(_state) + " " +  String(WiFiAutoReconnect) + " " + String(WiFiMaxInitialTimeout) + " " + String(WiFiIntervalTraConnetion) +
          " " + String(WPSBlinkInterval) + " " + String(ConnLedPin) + " " + String(ConnButtonPin) + " " + String(ConnButtonPinMode) +
          " " + String(WPSConfigured) + " " + String(WPSDefaultConfig) + " " + String(OTAStarted) + " " + String(OTAHostname) +
          " " + String(version) + " " + String(serverStarted);
 }
+
+String ConnectionManager::getStringState() {
+      switch (_state) {
+          case FIRST_CONNECTION: return "FIRST_CONNECTION";
+          case CONNECTED: return "CONNECTED";
+          case DISCONNECTED: return "DISCONNECTED";
+          case NOT_CONNECTED: return "NOT_CONNECTED";
+          case WPS_CONNECTION: return "WPS_CONNECTION";
+          case WPS_FAILED: return "WPS_FAILED";
+          case WPS_TIMEOUT: return "WPS_TIMEOUT";
+      }
+      return "";
+    }
 
 void ConnectionManager::setAutoReconnect(bool en) {
   WiFiAutoReconnect = en;
@@ -284,11 +285,10 @@ void ConnectionManager::_loop(bool withServer, bool withOTA) {
   }
 
   if (ConnButtonState == 1) {
-    
     //Fronte di salita
     if (ConnButtonState && !ConnButtonStateP ) {
       ConnButtonIstantUP = millis();
-      if(_state == WPS_TIMEOUT || _state == WPS_FAILED){
+      if (_state == WPS_TIMEOUT || _state == WPS_FAILED) {
         debugPort->println("Ripristino la connessione");
         WiFiAutoReconnect = true;
         _state = DISCONNECTED;
@@ -300,7 +300,7 @@ void ConnectionManager::_loop(bool withServer, bool withOTA) {
       } else {
         WiFiAutoReconnect = true;
       }
-      
+
     }
     //Fronte di discesa
     if (!ConnButtonState && ConnButtonStateP) {
@@ -321,33 +321,32 @@ void ConnectionManager::_loop(bool withServer, bool withOTA) {
       }
     }
   }
-  //Reboot for time
-  if (RebootOnReconectionMaxTime && WiFiAutoReconnect && millis() - lastWiFiConnectedIstant > maxDisconnectedTime) {
-    debugPort->println("Too much time is passed from the last connected time! REBOOTING!");
-    if (onRebootCallback != NULL) {
-      onRebootCallback();
-      delay(250);
-    }
-    ESP.restart();
-  }
   ConnButtonStateP = ConnButtonState;
 }
 
-void ConnectionManager::connectionHandler(){         //TO DO //gestisce lo stato e le riconnessioni, return: stato
+void ConnectionManager::connectionHandler() {        //TO DO //gestisce lo stato e le riconnessioni, return: stato
   //Reconnect //OK
-  if (_state == DISCONNECTED && WiFiAutoReconnect) {
-    WiFiReconnect();
-  } else if (_state == CONNECTED) {
-    lastWiFiConnectedIstant = millis();
-    if (WPSDisabled) {
-      debugPort->println("Enabling WPS after reconnetion!");
-      esp_wifi_wps_enable(&config);
-      WPSDisabled = false;
-    }
+  if(WiFi.status() == WL_DISCONNECTED && _state != WPS_CONNECTION){
+    _state = DISCONNECTED;
+  }
+  switch (_state) {
+    case DISCONNECTED:
+      if(WiFiAutoReconnect){
+        WiFiReconnect();
+      }
+      break;
+    case CONNECTED:
+      lastWiFiConnectedIstant = millis();
+      if (WPSDisabled) {
+        debugPort->println("Enabling WPS after reconnetion!");
+        esp_wifi_wps_enable(&config);
+        WPSDisabled = false;
+      }
+      break;
   }
 }
 
-void ConnectionManager::connectionLedRoutine(){      //TO DO //CONTROLLA IL LED
+void ConnectionManager::connectionLedRoutine() {     //TO DO //CONTROLLA IL LED
   //Led state: //OK
   static uint32_t t1;
   switch (_state) {
@@ -472,7 +471,7 @@ void ConnectionManager::WiFiConnect() {
         t2 = millis();
         debugPort->println("Wait for connection...");
         while (millis() < t1 + 1500) {
-          //LAMPEGGIO NON BLOCCANTE
+          //LAMPEGGIO ASINCRONO NON BLOCCANTE
           if (millis() < t2 + 200) {
             digitalWrite(ConnLedPin, HIGH);
           } else {
@@ -493,10 +492,20 @@ void ConnectionManager::WiFiConnect() {
 
 void ConnectionManager::WiFiReconnect() {
   if (millis() - lastConnectionIstant > 5000) {
-    if (RebootOnReconectionMaxTimes && reconnectionTimes > RECONNECTION_MAX_TIMES) {
-      debugPort->println("REBOOTING for max reconnection times!!");
+    //Reboot fro retries
+    if (RebootOnReconectionMaxTimes && reconnectionTimes == maxReconnetcRetries) {
+      debugPort->println("REBOOTING: for max reconnection times!!");
       if (onRebootCallback != NULL) {
         onRebootCallback();
+      }
+      ESP.restart();
+    }
+    //Reboot for time
+    if (RebootOnReconectionMaxTime && WiFiAutoReconnect && millis() - lastWiFiConnectedIstant > maxDisconnectedTime) {
+      debugPort->println("REBOOTING: too much time is passed from the last connected time! ");
+      if (onRebootCallback != NULL) {
+        onRebootCallback();
+        delay(250);
       }
       ESP.restart();
     }

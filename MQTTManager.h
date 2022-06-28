@@ -1,72 +1,100 @@
 /*
     Connection Manager created by Alan Masutti on 06th Mar 2022
-                                   Last modify on 06th Mar 2022
+                                   Last modify on 28th Jun 2022
       Ver 1.0 based on ESP32
 
       Notes:
-        - Prima prova, la classe eredita da ConnectionManager
+        - La parte ereditata funziona
+        - Set del server MQTT               [DONE]
+        - Connessione MQTT                  [DONE]
+        - Lampeggio del LED                 [DONE]
+        - Aggiunta la funzione per stampare
+          lo stato in stringa               [DONE]
 
       To DO List
+        - Sistemare i costruttori
         - Dinamic MQTT server
+        - Reboot options
 */
 
-#ifndef __MQTT_HELPER_H__
-#define __MQTT_HELPER_H__
+#ifndef __MQTT_MANAGER_H__
+#define __MQTT_MANAGER_H__
 
 #include "ConnectionManager.h"
 #include <PubSubClient.h>
 #include <WiFiClient.h>
 
-#define MQTT_BLINK_INTERVAL 1000
 
 //Costanti di stato
 #define MQTT_CONNECTED 7
-#define MQTT_DISCONNECTED 8
-#define MQTT_SUBSCRIBE_FAILED 9
-#define MQTT_STARTED 10
+#define MQTT_DISCONNECTED CONNECTED
+#define MQTT_SUBSCRIBE_FAILED 8
 
-//MQTT_CALLBACK_SIGNATURE
-
-class MQTTManager : public ConnectionManager{
-public:
-  MQTTManager();
-  MQTTManager(bool autoReconnect,
-            byte connection_led_pin, 
-            uint32_t wifi_max_initial_timeout,
-            uint32_t wifi_min_time_tra_connection, 
-            uint32_t wps_blink_interval, 
-            byte conn_button_pin, 
-            byte conn_button_pin_mode,
-            byte conn_button_mode);
-
-  ~MQTTManager(){};
-
-  //Setter
-//  void setMQTTServer(const char* ipAddress, uint16_t port = 1883);
-//  void setMQTTServer(uint8_t* ipAddress, uint16_t port = 1883);
-//  void setMQTTServer(IPAddress ipAddress, uint16_t port = 1883);
-//  void setCallback(MQTT_CALLBACK_SIGNATURE);
-//  void setMQTTClient(PubSubClient &client);
-//  void setWiFiClient(WiFiClient &WIFIClient);
-//  void setDisconnectBlink(uint16_t interval);
-//  void setName(String &name);
+//Costanti timing
+#define MQTT_RECONNECT_INTERVAL 5 * SEC  //Tempo minimo tra una connessione e l'altra
+#define MQTT_DISCONNECTED_BLINK_INTERVAL 1000
+#define REBOOT_ON_NOT_MQTT_RECONNECTION_FOR_RETRIES false  //Modalita di reboot dopo aver raggiunto il max tentativo di riconnesione
+#define MQTT_RECONNECTION_MAX_TIMES 15         //Numero massimo di tentativi per riconnessione
+#define REBOOT_ON_NOT_MQTT_RECONNECTION_FOR_TIME false     //Modalita di reboot dopo aver raggiunto il tempo di disc. max
+#define MAX_MQTT_DISCONNECTED_TIME 10 * MIN    //tempo massimo di disconnessione
 
 
-  //Getter
+class MQTTManager : public ConnectionManager {
+  public:
+    MQTTManager();
+    MQTTManager(bool autoReconnect,
+                byte connection_led_pin,
+                uint32_t wifi_max_initial_timeout,
+                uint32_t wifi_min_time_tra_connection,
+                uint32_t wps_blink_interval,
+                byte conn_button_pin,
+                byte conn_button_pin_mode,
+                byte conn_button_mode);
 
-//  void subscribe(String topics[], uint16_t len);
-//  bool start();
+    ~MQTTManager() {};
 
-  //Override methods
-  virtual void setHomepage() override;
-  virtual void startConnection(bool withWPS = true) override;
-  virtual void loop(bool withServer = true, bool withOTA = true) override;
-  
-protected:
-  WiFiClient *wifiClient;
-  PubSubClient *mqttClient;
-  uint16_t MqttDisconnectedBlinkInterval;
-  String _name;
+    //Setter
+    void setMQTTServer(PubSubClient* server, String deviceName, const char* ipAddress, uint16_t port = 1883);
+    void setMQTTServer(PubSubClient* server, String deviceName, uint8_t* ipAddress, uint16_t port = 1883);
+    void setMQTTServer(PubSubClient* server, String deviceName, IPAddress ipAddress, uint16_t port = 1883);
+    void setCallback(MQTT_CALLBACK_SIGNATURE);
+    //  void setDisconnectBlink(uint16_t interval);
+
+
+    //Getter
+    String getStringState();
+    
+    void setTopics(String* topics, uint16_t len);
+    byte startMQTT();
+
+    //Override methods
+    virtual void loop(bool withServer = true, bool withOTA = true);
+    virtual void setHomepage() override;
+    virtual void startConnection(bool withWPS = true) override;
+
+  protected:
+    PubSubClient *MQTTServer;
+
+    //intervalli per le connessioni
+    uint16_t MQTTIntervalTraConnetion;
+    uint32_t MQTTLastConnectionIstant;
+
+    //intervalli per il reboot
+    bool RebootOnMQTTReconectionMaxTimes;
+    uint16_t MQTTReconnectionTimes;
+    uint16_t maxMQTTReconnetcRetries;
+    bool RebootOnMQTTReconectionMaxTime;
+    uint16_t maxMQTTDisconnectedTime;
+    uint32_t lastMQTTConnectedIstant;
+
+    void MQTTReconnect();
+    virtual void connectionHandler() override;         //TO DO //gestisce lo stato e le riconnessioni, return: stato
+    virtual void connectionLedRoutine() override;      //TO DO //CONTROLLA IL LED
+    uint16_t MqttDisconnectedBlinkInterval;
+    String _name;
+    String* topics;
+    uint16_t topicsLen;
+    void subscribe(String* topics, uint16_t len);
 };
 
 #endif

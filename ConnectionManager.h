@@ -4,12 +4,17 @@
       Ver 2.2 based on ESP32
 
       Notes:
-        - Default homepage
-        - Modularizzato il loop, non è più virtual
-        - Modificato il _loop, esegue solo quello che non dipende da future implementazioni
-        - Aggiunti i metodi virtuali connectionLedRoutine e connectionHandler:
-          - connectionLedRoutine gestisce il lampeggio del LED di connessione;
-          - connectionHandler gestisce lo stato, pensa alla riconnessione se serve;
+        - Default homepage                                      [DONE]
+        - Modularizzato il loop, è tornato virtual!             [DONE]
+        - Modificato il _loop, esegue solo quello che non 
+          dipende da future implementazioni                     [DONE]
+        - Aggiunti i metodi virtuali connectionLedRoutine
+           e connectionHandler:                                 [DONE]
+          - connectionLedRoutine gestisce il lampeggio del
+             LED di connessione;                                [DONE]
+          - connectionHandler gestisce lo stato, pensa alla
+             riconnessione se serve;                            [DONE]
+        - Aggiunta la funzione per stampare lo stato in stringa [DONE]
 
       To DO List
       	- Controllo della visibilità
@@ -17,9 +22,7 @@
         - Dinamic set of IP address on WebServer
         - Back up of settings
         - List of known Networks
-        - Cambio delle costanti e implementazione di costruttori per proprietà costanti
         - AP configurator
-
 */
 
 #ifndef __CONNECTION_MANAGER_H__
@@ -82,13 +85,14 @@ class ConnectionManager {
                         uint32_t wps_blink_interval,
                         byte conn_button_pin,
                         byte conn_button_pin_mode,
-                        byte conn_button_mode);					//done
+                        byte conn_button_mode);	//done
     ~ConnectionManager() {};										//done
 
     //Getter
     uint8_t getState() const;									//Return connection state
     String getOTAHostname()const;							//ok
     String toString() const;								  //ok
+    virtual String getStringState();          //ok
 
     //Setter
     void setAutoReconnect(bool en);
@@ -113,7 +117,7 @@ class ConnectionManager {
     void startWiFi(const char ssid[], const char pass[], byte retries = 0, bool bloc = false);	//Start only WiFi
     void startOTA();													//ok
     void startWebServer();												//ok
-    void loop(bool withServer = true, bool withOTA = true);		//va modifcato per aggiungere modularità! //Check Connection, reconnect to WiFi in case of losing connection,
+    virtual void loop(bool withServer = true, bool withOTA = true);		//va modifcato per aggiungere modularità! //Check Connection, reconnect to WiFi in case of losing connection,
     // and hanlde the WPS BUTTON and CONNECTION LED
   protected:
     Stream *debugPort = &Serial;
