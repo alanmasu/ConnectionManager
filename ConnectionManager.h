@@ -113,6 +113,7 @@ class ConnectionManager {
     void setDefaultWPSConfig();
     void setStaticIPAddress(IPAddress ip, IPAddress gateway, IPAddress subnet, IPAddress DNS, IPAddress DNS2);
     void configButton(byte pin, byte pinMode, byte mode);
+    void configLedPin(byte pin);
 
     virtual void startConnection(bool withWPS = true);							//Connect automaticly to last net and in failture case start WPS connection
     void startWiFi(const char ssid[], const char pass[], byte retries = 0, bool bloc = false);	//Start only WiFi

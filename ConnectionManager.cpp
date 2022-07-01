@@ -1,3 +1,4 @@
+
 #include "ConnectionManager.h"
 #include <Arduino.h>
 #include <WiFi.h>
@@ -148,6 +149,17 @@ void ConnectionManager::setServer(WebServer *s, bool withHomepage) {
 
 void ConnectionManager::setStaticIPAddress(IPAddress ip, IPAddress gateway, IPAddress subnet, IPAddress DNS, IPAddress DNS2) {
   WiFi.config(ip, gateway, subnet, DNS, DNS2);
+}
+
+void ConnectionManager::configButton(byte pin, byte pinMode, byte mode){
+  ConnButtonPin = pin;
+  ConnButtonPinMode = pinMode;
+  ConnButtonMode = mode;
+  pinMode(pin, ConnButtonPinMode);
+}
+void ConnectionManager::configLedPin(byte pin){
+  ConnLedPin = pin;
+  pinMode(pin, OUTPUT);
 }
 
 void ConnectionManager::startConnection(bool withWPS) {
