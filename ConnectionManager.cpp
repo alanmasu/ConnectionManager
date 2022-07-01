@@ -151,9 +151,9 @@ void ConnectionManager::setStaticIPAddress(IPAddress ip, IPAddress gateway, IPAd
   WiFi.config(ip, gateway, subnet, DNS, DNS2);
 }
 
-void ConnectionManager::configButton(byte pin, byte pinMode, byte mode){
+void ConnectionManager::configButton(byte pin, byte connPinMode, byte mode){
   ConnButtonPin = pin;
-  ConnButtonPinMode = pinMode;
+  ConnButtonPinMode = connPinMode;
   ConnButtonMode = mode;
   pinMode(pin, ConnButtonPinMode);
 }
