@@ -112,7 +112,7 @@ class ConnectionManager {
     void setServer(WebServer *s, bool withHomepage = false);	//done
     void setDefaultWPSConfig();
     void setStaticIPAddress(IPAddress ip, IPAddress gateway, IPAddress subnet, IPAddress DNS, IPAddress DNS2);
-    void configButton(byte pin, byte pinMode, byte mode);
+    void configButton(byte pin, byte connPinMode, byte mode);
     void configLedPin(byte pin);
 
     virtual void startConnection(bool withWPS = true);							//Connect automaticly to last net and in failture case start WPS connection
