@@ -44,7 +44,7 @@
 
 //WPS and WiFi
 #define ESP_WPS_MODE      WPS_TYPE_PBC
-#define ESP_MANUFACTURER  "ALAN MASUTTI"
+#define ESP_MANUFACTURER  "Espressif"
 #define ESP_MODEL_NUMBER  "ESP32"
 #define ESP_MODEL_NAME    "ESP-WROOM-32"
 #define ESP_DEVICE_NAME   "ESP32"
@@ -158,8 +158,8 @@ class ConnectionManager {
     void _loop(bool withServer = true, bool withOTA = true);		//va modificato per avere la modularità //CONTROLLA WEB SERVER, WPS E BUTTON
     virtual void connectionHandler();         //TO DO //gestisce lo stato e le riconnessioni, return: stato
     virtual void connectionLedRoutine();      //TO DO //CONTROLLA IL LED
-    void setupWiFi();												  //ok		//Set WiFi parameters and setup those pins
-    void setupWPS();												  //ok		//Set WPS pin and enable this mode
+    void setupWiFi();												//ok		//Set WiFi parameters and setup those pins
+    void setupWPS();												//ok		//Set WPS pin and enable this mode
     void WiFiConnect();									 			//ok		//Start the WiFi connection
     void WiFiReconnect();											//ok		//Reconnect the last network, is not a blocking function
     void WPSConnect();												//ok		//Starts the WPS connection

@@ -4,6 +4,8 @@ WebServer server(80);
 
 ConnectionManager connectionManager;
 
+esp_wps_config_t config;
+
 const char* ssid = "YOUR_SSID";
 const char* pass = "YOUR_PASS";
 
@@ -41,10 +43,20 @@ void setup() {
   connectionManager.setRebootOptions(false, true);
 
   //Print the hostname
-  Serial.println("You can reach me also at: " + connectionManager.getOTAHostname() + ".local/");
+  if(connectionManager.getState() == CONNECTED){
+    Serial.println("You can reach me also at: " + connectionManager.getOTAHostname() + ".local/");
+  }
+
+
 }
+
+uint32_t t = 0;
 
 void loop() {
   //this update everything, connection LED (default on-board led), connection BUTTON (default on-board BOOT button), servers... 
   connectionManager.loop();
+  if(millis() - t > 1000){
+    t = millis();
+    Serial.println(connectionManager.getStringState());
+  }
 }
