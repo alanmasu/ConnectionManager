@@ -1,6 +1,6 @@
 /*
     Connection Manager created by Alan Masutti on 16th Feb 2022
-                                   Last modify on 28th Jun 2022
+                                   Last modify on 10th Aug 2022
       Ver 2.2 based on ESP32
 
       Notes:
@@ -23,6 +23,10 @@
         - Back up of settings
         - List of known Networks
         - AP configurator
+        - OTA mode:
+          - via IDE
+          - via WebPage
+          - via GitHub
 */
 
 #ifndef __CONNECTION_MANAGER_H__
@@ -44,10 +48,10 @@
 
 //WPS and WiFi
 #define ESP_WPS_MODE      WPS_TYPE_PBC
-#define ESP_MANUFACTURER  "Espressif"
+#define ESP_MANUFACTURER  "ESPRESSIF"
 #define ESP_MODEL_NUMBER  "ESP32"
-#define ESP_MODEL_NAME    "ESP-WROOM-32"
-#define ESP_DEVICE_NAME   "ESP32"
+#define ESP_MODEL_NAME    "ESPRESSIF IOT"
+#define ESP_DEVICE_NAME   "ESP STATION"
 
 #define PULLUP 1
 #define PULLDOWN 0
@@ -78,7 +82,7 @@
 
 class ConnectionManager {
   public:
-    ConnectionManager();										//done
+    ConnectionManager();										                    //ok
     ConnectionManager(	bool autoReconnect,
                         byte connection_led_pin,
                         uint32_t wifi_max_initial_timeout,
@@ -86,40 +90,43 @@ class ConnectionManager {
                         uint32_t wps_blink_interval,
                         byte conn_button_pin,
                         byte conn_button_pin_mode,
-                        byte conn_button_mode);	//done
-    ~ConnectionManager() {};										//done
+                        byte conn_button_mode);	                //ok
+    ~ConnectionManager() {};									                  //ok
 
     //Getter
-    uint8_t getState() const;									//Return connection state
-    String getOTAHostname()const;							//ok
-    String toString() const;								  //ok
-    virtual String getStringState();          //ok
+    uint8_t getState() const;									                  //Return connection state
+    String getOTAHostname()const;							                  //ok
+    String toString() const;								                    //ok
+    virtual String getStringState();                            //ok
 
     //Setter
     void setAutoReconnect(bool en);
     void setMaxInitialTimeout(uint16_t time);
     void setReconnectTimeout(uint16_t time);
     void setWPSBlinkInterval(uint16_t time);
-    void setWPSSpech(const esp_wps_config_t *spech);
+    void setWPSConfig(esp_wps_config_t *spech, bool isNotDefault = false);
     void setRebootOptions(bool forTime = REBOOT_ON_NOT_RECONNECTION_FOR_TIME,
                           bool forRetries = REBOOT_ON_NOT_RECONNECTION_FOR_RETRIES,
                           uint16_t max_time = MAX_DISCONNECTED_TIME,
                           uint32_t max_retries = MAX_RECONNECTION_TIMES);
     void setOnRebootCallback(void (*callback)(void));
-    void setVersion(String ver);								//done
-    void setOTAHostname(String h);							//done
-    virtual void setHomepage();									//done
-    void setServer(WebServer *s, bool withHomepage = false);	//done
+    void setVersion(String ver);								                //done
+    void setOTAHostname(String h);							                //done
+    virtual void setHomepage();									                //done
+    void setServer(WebServer *s, bool withHomepage = false);	  //done
     void setDefaultWPSConfig();
     void setStaticIPAddress(IPAddress ip, IPAddress gateway, IPAddress subnet, IPAddress DNS, IPAddress DNS2);
     void configButton(byte pin, byte connPinMode, byte mode);
     void configLedPin(byte pin);
 
-    virtual void startConnection(bool withWPS = true);							//Connect automaticly to last net and in failture case start WPS connection
-    void startWiFi(const char ssid[], const char pass[], byte retries = 0, bool bloc = false);	//Start only WiFi
-    void startOTA();													//ok
-    void startWebServer();												//ok
-    virtual void loop(bool withServer = true, bool withOTA = true);		//va modifcato per aggiungere modularità! //Check Connection, reconnect to WiFi in case of losing connection,
+    //Connect automaticly to last net and in failture case start WPS connection
+    virtual void startConnection(bool withWPS = true, bool tryReconnection = true);		       
+
+    //Start only WiFi
+    void startWiFi(const char ssid[], const char pass[], byte retries = 0, bool bloc = false);	
+    void startOTA();													      //ok
+    void startWebServer();												  //ok
+    virtual void loop(bool withServer = true, bool withOTA = true);		//Check Connection, reconnect to WiFi in case of losing connection,
     // and hanlde the WPS BUTTON and CONNECTION LED
   protected:
     Stream *debugPort = &Serial;
@@ -133,7 +140,7 @@ class ConnectionManager {
     byte ConnButtonPin;
     byte ConnButtonPinMode;
     byte ConnButtonMode;
-    esp_wps_config_t config;
+    esp_wps_config_t *config = NULL;
     bool ConnButtonState;
     bool ConnButtonStateP;
     uint32_t ConnButtonIstantUP;
@@ -155,15 +162,15 @@ class ConnectionManager {
     uint32_t maxDisconnectedTime;
     void (*onRebootCallback)(void);
 
-    void _loop(bool withServer = true, bool withOTA = true);		//va modificato per avere la modularità //CONTROLLA WEB SERVER, WPS E BUTTON
-    virtual void connectionHandler();         //TO DO //gestisce lo stato e le riconnessioni, return: stato
-    virtual void connectionLedRoutine();      //TO DO //CONTROLLA IL LED
-    void setupWiFi();												//ok		//Set WiFi parameters and setup those pins
-    void setupWPS();												//ok		//Set WPS pin and enable this mode
-    void WiFiConnect();									 			//ok		//Start the WiFi connection
-    void WiFiReconnect();											//ok		//Reconnect the last network, is not a blocking function
-    void WPSConnect();												//ok		//Starts the WPS connection
-    void WiFiEvent(WiFiEvent_t event, system_event_info_t info);	//ok compatibile con MQTT
+    void _loop(bool withServer = true, bool withOTA = true);		//ok    //CONTROLLA WEB SERVER, WPS E BUTTON
+    virtual void connectionHandler();                           //ok    //gestisce lo stato e le riconnessioni, return: stato
+    virtual void connectionLedRoutine();                        //ok    //CONTROLLA IL LED
+    void setupWiFi();												                    //ok		//Set WiFi parameters and setup those pins
+    void setupWPS();												                    //ok		//Set WPS pin and enable this mode
+    void WiFiConnect();									 			                  //ok		//Start the WiFi connection
+    void WiFiReconnect();											                  //ok		//Reconnect the last network, is not a blocking function
+    void WPSConnect();												                  //ok		//Starts the WPS connection
+    void WiFiEvent(WiFiEvent_t event, system_event_info_t info);//ok    //compatibile con MQTT
 };
 
 #endif

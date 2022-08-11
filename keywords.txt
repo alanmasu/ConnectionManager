@@ -18,11 +18,12 @@ startConnection		KEYWORD2
 get 			KEYWORD2
 getState 		KEYWORD2
 getOTAHostname 		KEYWORD2
+getStringState		KEYWORD2
 setAutoReconnect 	KEYWORD2
 setMaxInitialTimeout 	KEYWORD2
 setReconnectTimeout 	KEYWORD2
 setWPSBlinkInterval 	KEYWORD2
-setWPSSpech 		KEYWORD2
+setWPSConfig		KEYWORD2
 setRebootOptions 	KEYWORD2
 setOnRebootCallback 	KEYWORD2
 setVersion 		KEYWORD2

@@ -17,11 +17,11 @@ void setup() {
   //Start serial
   Serial.begin(115200);
 
-  //Creatin a variable to store version of the project
+  //Creating a variable to store version of the project
   String ver = String(__FILE__) + " Time: " + String(__DATE__) + " " + String(__TIME__);
   Serial.println("Version: " + ver);
 
-  //Setting version on WebServer /IP_ADD/info
+  //Setting version on WebServer /IP_ADD/infoAbout
   connectionManager.setVersion(ver);
   //Setting server
   // true -> whitDefaultHomePage
@@ -30,8 +30,9 @@ void setup() {
   connectionManager.setServer(&server, true);
   //Connect to a WiFi for the first time
   //connectionManager.startWiFi(ssid, pass);
-  //For enable WPS may use:
-  connectionManager.startConnection(true);
+  //For enable WPS you may use:  
+  connectionManager.setWPSConfig(&config);
+  connectionManager.startConnection(true, false);
 
   //Start WebServer and OTA
   connectionManager.startWebServer();
@@ -41,12 +42,6 @@ void setup() {
   //Setting rebootCallback and reboot options
   connectionManager.setOnRebootCallback(rebootCallback);
   connectionManager.setRebootOptions(false, true);
-
-  //Print the hostname
-  if(connectionManager.getState() == CONNECTED){
-    Serial.println("You can reach me also at: " + connectionManager.getOTAHostname() + ".local/");
-  }
-
 
 }
 
