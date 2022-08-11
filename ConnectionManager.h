@@ -17,9 +17,7 @@
         - Aggiunta la funzione per stampare lo stato in stringa [DONE]
 
       To DO List
-      	- Controllo della visibilità
         - Debug options
-        - Dinamic set of IP address on WebServer
         - Back up of settings
         - List of known Networks
         - AP configurator
