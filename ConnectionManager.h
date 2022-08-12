@@ -121,7 +121,7 @@ class ConnectionManager {
     virtual void startConnection(bool withWPS = true, bool tryReconnection = true);		       
 
     //Start only WiFi
-    void startWiFi(const char ssid[], const char pass[], byte retries = 0, bool bloc = false);	
+    void startWiFi(const char ssid[], const char pass[], byte retries = 0, bool bloc = false, bool whitReconnection = true);	
     void startOTA();													      //ok
     void startWebServer();												  //ok
     virtual void loop(bool withServer = true, bool withOTA = true);		//Check Connection, reconnect to WiFi in case of losing connection,

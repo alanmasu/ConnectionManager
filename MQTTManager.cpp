@@ -179,10 +179,9 @@ void MQTTManager::connectionHandler() {        //TO DO //gestisce lo stato e le 
         lastMQTTConnectedIstant = millis();
         lastWiFiConnectedIstant = millis();
         MQTTReconnectionTimes = 0;
-        if (WPSDisabled) {
+        if (WPSConfigurated) {
           debugPort->println("Enabling WPS after reconnetion!");
-          esp_wifi_wps_enable(config);
-          WPSDisabled = false;
+          setupWPS();
         }
         break;
       case MQTT_DISCONNECTED:
