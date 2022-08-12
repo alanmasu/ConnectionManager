@@ -202,15 +202,15 @@ void ConnectionManager::startWiFi(const char ssid[], const char pass[], byte ret
       lastConnectionIstant = millis();
       debugPort->printf("[LOG]: Tentativo di connessione n %d di %d...\n", i + 2, retries + 1);
       WiFi.begin(ssid, pass);
-      while (millis() < lastConnectionIstant + 1000 && WiFi.status() != WL_CONNECTED) {
-        if (millis() > startConnectionIstant + WiFiMaxInitialTimeout) {
+      while (millis() - lastConnectionIstant < 1000 && WiFi.status() != WL_CONNECTED) {
+        if (millis() - startConnectionIstant > WiFiMaxInitialTimeout) {
           timeout = true;
           break;
         }
-        if (millis() < t1 + 200) {
+        if (millis() - t1 < 200) {
           digitalWrite(ConnLedPin, HIGH);
         } else {
-          if (millis() > t1 + 700) {
+          if (millis() - t1 > 700) {
             t1 = millis();
           }
           digitalWrite(ConnLedPin, LOW);
@@ -230,11 +230,11 @@ void ConnectionManager::startWiFi(const char ssid[], const char pass[], byte ret
       WiFi.begin(ssid, pass);
       lastConnectionIstant = millis();
       debugPort->printf("[LOG]: Tentativo di connessione n %d...\n", i);
-      while (millis() < lastConnectionIstant + WiFiIntervalTraConnetion && WiFi.status() != WL_CONNECTED) {
-        if (millis() < t1 + 200) {
+      while (millis() - lastConnectionIstant < WiFiIntervalTraConnetion && WiFi.status() != WL_CONNECTED) {
+        if (millis() - t1 < 200) {
           digitalWrite(ConnLedPin, HIGH);
         } else {
-          if (millis() > t1 + 1000) {
+          if (millis() - t1 > 1000) {
             t1 = millis();
           }
           digitalWrite(ConnLedPin, LOW);
@@ -396,14 +396,14 @@ void ConnectionManager::connectionLedRoutine() {     //TO DO //CONTROLLA IL LED
       digitalWrite(ConnLedPin, LOW);
       break;
     case WPS_CONNECTION:
-      if (millis() > t1 + WPSBlinkInterval) {
+      if (millis() - t1 > WPSBlinkInterval) {
         t1 = millis();
         digitalWrite(ConnLedPin, !digitalRead(ConnLedPin));
       }
       break;
     case WPS_TIMEOUT:
     case WPS_FAILED:
-      if (millis() < t1 + 2000) {
+      if (millis() - t1 < 2000) {
         int dt = millis() - t1;
         if (dt < 200) {
           digitalWrite(ConnLedPin, HIGH);
@@ -500,7 +500,7 @@ void ConnectionManager::setDefaultWPSConfig() {
 void ConnectionManager::WiFiConnect() {
   uint32_t t1;
   uint32_t t2;
-  if (millis() - lastConnectionIstant > 5000 || _state == FIRST_CONNECTION) {
+  if (millis() - lastConnectionIstant > WiFiIntervalTraConnetion || _state == FIRST_CONNECTION) {
     debugPort->println("[LOG]: Trying to connect the last WiFi connection... ");
     for (int i = 0; i < 8; i++) {
       if ( WiFi.status() != WL_CONNECTED) {
@@ -530,7 +530,7 @@ void ConnectionManager::WiFiConnect() {
 }
 
 void ConnectionManager::WiFiReconnect() {
-  if (millis() - lastConnectionIstant > 5000) {
+  if (millis() - lastConnectionIstant > WiFiIntervalTraConnetion) {
     //Reboot fro retries
     if (RebootOnReconectionMaxTimes && reconnectionTimes == maxReconnetcRetries) {
       debugPort->println("[REBOOTING]: max reconnection times!!");
