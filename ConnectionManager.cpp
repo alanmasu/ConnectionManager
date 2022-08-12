@@ -337,22 +337,27 @@ void ConnectionManager::_loop(bool withServer, bool withOTA) {
 
     //WPS CONNECTION ON BUTTON PRESSED //OK
     if(ConnButtonState){
-	    if (millis() - ConnButtonIstantUP > CONN_BUTTON_FIRST_INTERVAL && millis() - ConnButtonIstantUP > CONN_BUTTON_FIRST_INTERVAL + 500) {
+	    if (millis() - ConnButtonIstantUP > CONN_BUTTON_FIRST_INTERVAL && _state != WPS_CONNECTION) {
       	if(!WPSConfigurated){
 	      	setupWPS();
 	      }
-	      if(_state != WPS_CONNECTION){
-	      	_state = WPS_CONNECTION;
-		      if (WiFi.status() != WL_CONNECTED) {
-		        Serial.println("[LOG]: Starting WPS connection!");
-		        WPSConnect();
-		      } else if (WiFi.status() == WL_CONNECTED) {
-		        Serial.println("[LOG]: Disconnecting from WiFi!");
-		        WiFi.disconnect();
-		        Serial.println("[LOG]: Starting WPS connection!");
-		        WPSConnect();
-		      }
-		    }
+        if(WPSConfigurated){
+  	      if(_state != WPS_CONNECTION){
+  	      	_state = WPS_CONNECTION;
+  		      if (WiFi.status() != WL_CONNECTED) {
+  		        debugPort->println("[LOG]: Starting WPS connection!");
+  		        WPSConnect();
+  		      } else if (WiFi.status() == WL_CONNECTED) {
+  		        debugPort->println("[LOG]: Disconnecting from WiFi!");
+  		        WiFi.disconnect();
+  		        debugPort->println("[LOG]: Starting WPS connection!");
+  		        WPSConnect();
+  		      }
+  		    }
+        }else{
+          debugPort->println("[ERR]: WPS is not configurated, CANNOT start WPS connection!");
+          _state = WPS_FAILED;
+        }
 	    }
 		}
   }
