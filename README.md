@@ -234,7 +234,7 @@ Serve per settare le opzioni di rebooting in caso di disconnessione prolugata
 void setServer(WebServer *s, bool withHomepage = false)
 ```
 
-Serve per passare il riferimento al WebServer, , imposta le risposte alle seguenti richieste:
+Serve per passare il riferimento al WebServer, imposta le risposte alle seguenti richieste:
 
 * /infoAbout viene visualizzata la versione
 * /reboot viene eseguito un reboot dopo aver eseguito una Callback
