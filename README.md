@@ -61,7 +61,7 @@ Tenta la connessione all'ultima rete alla quale la scheda è stata connessa, ese
 ### `startWiFi`
 
 ```c++
-void startWiFi(const char ssid[], const char pass[], byte retries, bool bloc)
+void startWiFi(const char ssid[], const char pass[], byte retries, bool bloc, bool whitReconnection)
 ```
 
 Esegue la connessione ad una specifica rete che viene settata mediante i parametri. 
@@ -72,6 +72,7 @@ Esegue la connessione ad una specifica rete che viene settata mediante i paramet
 - pass: C string che contiene la password della rete,
 - retries: numero di nuovi tentativi da effettuare, default: `0` (ovvero esegue un tentativo solo)
 - bloc: flag che permette di far rimanere bloccata la funzione fino al primo successo di connessione [DANGER ZONE], default: `false`
+- whitReconnection: flag che abilita la riconnessione automatica in caso di fallimento della connessione, default: `true`
 
 > Return: `void`
 
