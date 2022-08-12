@@ -78,7 +78,7 @@ class MQTTManager : public ConnectionManager {
     //Override methods
     virtual void loop(bool withServer = true, bool withOTA = true) override;
     virtual void setHomepage() override;
-    virtual void startConnection(bool withWPS = true) override;
+    virtual void startConnection(bool withWPS = true, bool tryReconnection = true) override;
 
   protected:
     PubSubClient *MQTTServer;

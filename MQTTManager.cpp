@@ -158,8 +158,8 @@ void MQTTManager::setHomepage() {
   ConnectionManager::setHomepage();
 }
 
-void MQTTManager::startConnection(bool withWPS) {
-  ConnectionManager::startConnection(withWPS);
+void MQTTManager::startConnection(bool withWPS, bool tryReconnection) {
+  ConnectionManager::startConnection(withWPS, tryReconnection);
 }
 
 void MQTTManager::connectionHandler() {        //TO DO //gestisce lo stato e le riconnessioni, return: stato
@@ -181,7 +181,7 @@ void MQTTManager::connectionHandler() {        //TO DO //gestisce lo stato e le 
         MQTTReconnectionTimes = 0;
         if (WPSDisabled) {
           debugPort->println("Enabling WPS after reconnetion!");
-          esp_wifi_wps_enable(&config);
+          esp_wifi_wps_enable(config);
           WPSDisabled = false;
         }
         break;
