@@ -143,8 +143,7 @@ class ConnectionManager {
     bool ConnButtonStateP;
     uint32_t ConnButtonIstantUP;
     uint32_t ConnButtonIstantDWN;
-    bool WPSConfigured;
-    bool WPSDisabled;
+    bool WPSConfigurated;
     bool WPSDefaultConfig;
     String version;
     bool OTAStarted;

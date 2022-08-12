@@ -33,8 +33,7 @@ ConnectionManager::ConnectionManager(  bool autoReconnect,
   OTAStarted = false;
   serverStarted = false;
   //WPS Default configuration
-  WPSConfigured = false;
-  WPSDisabled = false;
+  WPSConfigurated = false;
   WPSDefaultConfig = true;
   lastConnectionIstant = 0;
   _state = NOT_CONNECTED;
@@ -60,7 +59,7 @@ String ConnectionManager::getOTAHostname()const {
 String ConnectionManager::toString()const {
   return String(_state) + " " +  String(WiFiAutoReconnect) + " " + String(WiFiMaxInitialTimeout) + " " + String(WiFiIntervalTraConnetion) +
          " " + String(WPSBlinkInterval) + " " + String(ConnLedPin) + " " + String(ConnButtonPin) + " " + String(ConnButtonPinMode) +
-         " " + String(WPSConfigured) + " " + String(WPSDefaultConfig) + " " + String(OTAStarted) + " " + String(OTAHostname) +
+         " " + String(WPSDefaultConfig) + " " + String(OTAStarted) + " " + String(OTAHostname) +
          " " + String(version) + " " + String(serverStarted);
 }
 
@@ -339,9 +338,8 @@ void ConnectionManager::_loop(bool withServer, bool withOTA) {
     //WPS CONNECTION ON BUTTON PRESSED //OK
     if(ConnButtonState){
 	    if (millis() - ConnButtonIstantUP > CONN_BUTTON_FIRST_INTERVAL && millis() - ConnButtonIstantUP > CONN_BUTTON_FIRST_INTERVAL + 500) {
-      	if(WPSDisabled){
+      	if(!WPSConfigurated){
 	      	setupWPS();
-	      	WPSDisabled = false;
 	      }
 	      if(_state != WPS_CONNECTION){
 	      	_state = WPS_CONNECTION;
@@ -375,10 +373,9 @@ void ConnectionManager::connectionHandler() {       //gestisce lo stato e le ric
       break;
     case CONNECTED:
       lastWiFiConnectedIstant = millis();
-      if (WPSDisabled) {
+      if (!WPSConfigurated) {
         debugPort->println("[LOG]: Enabling WPS after reconnetion!");
-        esp_wifi_wps_enable(config);
-        WPSDisabled = false;
+        setupWPS();
       }
       break;
   }
@@ -450,8 +447,7 @@ void ConnectionManager::WiFiEvent(WiFiEvent_t event, system_event_info_t info) {
       break;
     case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
       debugPort->println("[LOG]: WPS Successfull, stopping WPS and connecting to: " + String(WiFi.SSID()));
-      esp_wifi_wps_disable();
-      esp_wifi_wps_enable(config);
+      setupWPS();
       delay(10);
       WiFi.begin();
       WiFiAutoReconnect = true;
@@ -459,14 +455,12 @@ void ConnectionManager::WiFiEvent(WiFiEvent_t event, system_event_info_t info) {
     case SYSTEM_EVENT_STA_WPS_ER_FAILED:
       debugPort->println("[ERR]: WPS Failed");
       _state = WPS_FAILED;
-      esp_wifi_wps_disable();
-      esp_wifi_wps_enable(config);
+      setupWPS();
       break;
     case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT:
       debugPort->println("[ERR]: WPS Timeout");
       _state = WPS_TIMEOUT;
-      esp_wifi_wps_disable();
-      esp_wifi_wps_enable(config);
+      setupWPS();
       break;
     default:
       break;
@@ -474,6 +468,11 @@ void ConnectionManager::WiFiEvent(WiFiEvent_t event, system_event_info_t info) {
 }
 
 void ConnectionManager::setupWPS() {
+	if(config == NULL){
+		debugPort->println("[ERR]: WPS config struct is a NULL pointer, CANNOT start WPS service!!");
+		WPSConfigurated = false;
+		return;
+	}
 	debugPort->println("[LOG]: Starting WPS service");
 	if (WPSDefaultConfig) {
 		debugPort->println("[LOG]: Setting default WPS config!");
@@ -481,7 +480,7 @@ void ConnectionManager::setupWPS() {
 	}
 	esp_wifi_wps_disable();
 	esp_wifi_wps_enable(config);
-	WPSConfigured = true;
+	WPSConfigurated = true;
 }
 
 void ConnectionManager::setDefaultWPSConfig() {
@@ -551,10 +550,10 @@ void ConnectionManager::WiFiReconnect() {
     debugPort->println("[LOG]: Reconnecting... ");
     if (_state == DISCONNECTED){
       lastConnectionIstant = millis();
-      if (WPSConfigured && !WPSDisabled) {
+      if (WPSConfigurated) {
         debugPort->println("[LOG]: Disabling WPS for try reconnection!");
         esp_wifi_wps_disable();
-        WPSDisabled = true;
+        WPSConfigurated = false;
       }
       if (RebootOnReconectionMaxTimes) {
         debugPort->printf("[LOG]: Tentativo di riconnessione n %d di %d...\n", reconnectionTimes + 1, maxReconnetcRetries);
