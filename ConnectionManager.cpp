@@ -219,10 +219,10 @@ void ConnectionManager::startWiFi(const char ssid[], const char pass[], byte ret
       digitalWrite(ConnLedPin, LOW);
       if (timeout) {
         debugPort->println("[LOG]: La connessione ha impiegato più tempo del dovuto, ARRESTATA!");
-        _state = whitReconnection ? DISCONNECTED : NOT_CONNECTED;
         break;
       }
     }
+    _state = whitReconnection ? DISCONNECTED : NOT_CONNECTED;
   } else {	//Bloccante
     uint32_t i = 0;
     while (WiFi.status() != WL_CONNECTED) {
