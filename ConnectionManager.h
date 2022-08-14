@@ -57,7 +57,7 @@
 //Costants
 #define CONNECTION_LED_PIN 2				      //Led di connessione
 #define WIFI_MAX_INITIAL_TIMEOUT 30 * SEC	//Timeout in ms massimo per la connessione
-#define WIFI_RECONNECT_INTERVAL 5 * SEC	  //Tempo in ms tra una connessione e l'altra
+#define WIFI_RECONNECT_INTERVAL 2 * SEC	  //Tempo in ms tra una connessione e l'altra
 #define WPS_BLINK_INTERVAL 250				    //Lampeggio in ms per connessione WPS.				
 #define CONN_BUTTON_PIN 0					        //Pin pulsante di controllo per le connessioni
 #define CONN_BUTTON_PIN_MODE INPUT			  //Modalita pin di controllo
