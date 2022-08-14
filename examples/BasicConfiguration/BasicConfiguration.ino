@@ -1,11 +1,11 @@
 #include <ConnectionManager.h>
 
+//ConnectionManager
 WebServer server(80);
-
 ConnectionManager connectionManager;
-
 esp_wps_config_t config;
 
+//WiFi [not necessary whit 'startConnection()']
 const char* ssid = "YOUR_SSID";
 const char* pass = "YOUR_PASS";
 
@@ -28,10 +28,12 @@ void setup() {
   // set olso /IP_ADD/reboot for call rebootCallback and after reboots the core
   //      and /IP_ADD/rebootOnly thats reboot ESP32 whitout calling callBack
   connectionManager.setServer(&server, true);
+  
+  //For enable WPS you must use:  
+  connectionManager.setWPSConfig(&config);
   //Connect to a WiFi for the first time
   //connectionManager.startWiFi(ssid, pass);
-  //For enable WPS you may use:  
-  connectionManager.setWPSConfig(&config);
+  //or
   connectionManager.startConnection(true, false);
 
   //Start WebServer and OTA
