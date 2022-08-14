@@ -5,6 +5,8 @@
 #include <WebServer.h>
 #include <esp_wps.h>
 #include <ArduinoOTA.h>
+#include <ESPmDNS.h>
+
 
 ConnectionManager::ConnectionManager():
   ConnectionManager(true, CONNECTION_LED_PIN, WIFI_MAX_INITIAL_TIMEOUT, WIFI_RECONNECT_INTERVAL, WPS_BLINK_INTERVAL, CONN_BUTTON_PIN, CONN_BUTTON_PIN_MODE, CONN_BUTTON_MODE)
@@ -31,8 +33,7 @@ ConnectionManager::ConnectionManager(  bool autoReconnect,
   OTAStarted = false;
   serverStarted = false;
   //WPS Default configuration
-  WPSConfigured = false;
-  WPSDisabled = false;
+  WPSConfigurated = false;
   WPSDefaultConfig = true;
   lastConnectionIstant = 0;
   _state = NOT_CONNECTED;
@@ -58,7 +59,7 @@ String ConnectionManager::getOTAHostname()const {
 String ConnectionManager::toString()const {
   return String(_state) + " " +  String(WiFiAutoReconnect) + " " + String(WiFiMaxInitialTimeout) + " " + String(WiFiIntervalTraConnetion) +
          " " + String(WPSBlinkInterval) + " " + String(ConnLedPin) + " " + String(ConnButtonPin) + " " + String(ConnButtonPinMode) +
-         " " + String(WPSConfigured) + " " + String(WPSDefaultConfig) + " " + String(OTAStarted) + " " + String(OTAHostname) +
+         " " + String(WPSDefaultConfig) + " " + String(OTAStarted) + " " + String(OTAHostname) +
          " " + String(version) + " " + String(serverStarted);
 }
 
@@ -91,8 +92,9 @@ void ConnectionManager::setWPSBlinkInterval(uint16_t time) {
   WPSBlinkInterval = time;
 }
 
-void ConnectionManager::setWPSSpech(const esp_wps_config_t *spech) {
-  config = *spech;
+void ConnectionManager::setWPSConfig(esp_wps_config_t *spech, bool isNotDefault) {
+  config = spech;
+  WPSDefaultConfig = !isNotDefault;
 }
 
 void ConnectionManager::setRebootOptions(bool forTime, bool forRetries, uint16_t max_time, uint32_t max_retries) {
@@ -111,7 +113,16 @@ void ConnectionManager::setVersion(String ver) {
 }
 
 void ConnectionManager::setOTAHostname(String h) {
-  OTAHostname = h;
+	if(h != ""){
+	  if (!MDNS.begin(h.c_str())) {
+	  	OTAHostname = "";
+	  }else{
+	  	OTAHostname = h;
+	  	debugPort->println("[LOG]: You can reach me also at: " + OTAHostname + ".local/");
+	  }
+	}else{
+		debugPort->println("[ERR]: Hostname is an empty string");
+	}
 }
 
 void ConnectionManager::setHomepage() {
@@ -162,38 +173,44 @@ void ConnectionManager::configLedPin(byte pin){
   pinMode(pin, OUTPUT);
 }
 
-void ConnectionManager::startConnection(bool withWPS) {
+void ConnectionManager::startConnection(bool withWPS, bool tryReconnection) {
   _state = FIRST_CONNECTION;
   setupWiFi();
   WiFiConnect();
   if (withWPS) {
     setupWPS();
   }
+  if(tryReconnection){
+  	if(_state == NOT_CONNECTED){
+  		_state = DISCONNECTED;
+  	}
+  }
 }
 
-void ConnectionManager::startWiFi(const char ssid[], const char pass[], byte retries, bool bloc) {
+void ConnectionManager::startWiFi(const char ssid[], const char pass[], byte retries, bool bloc, bool whitReconnection) {
   bool timeout = false;
   _state = FIRST_CONNECTION;
   setupWiFi();
+  delay(150);
   uint32_t startConnectionIstant = millis();
   uint32_t t1 = millis();
-  if (!bloc) {
+  if (!bloc) { //Non bloccante
     if ((retries + 1) * 1000 > WiFiMaxInitialTimeout) {
-      debugPort->println("Attenzione, sono stati impostati troppi tentativi, la connessione corrompera' il tempo massimo di connessione!");
+      debugPort->println("[LOG]: Attenzione, sono stati impostati troppi tentativi, la connessione corrompera' il tempo massimo di connessione!");
     }
     for (int i = -1; i < retries; i++) {
       lastConnectionIstant = millis();
-      debugPort->printf("Tentativo di connessione n %d di %d...\n", i + 2, retries + 1);
+      debugPort->printf("[LOG]: Tentativo di connessione n %d di %d...\n", i + 2, retries + 1);
       WiFi.begin(ssid, pass);
-      while (millis() < lastConnectionIstant + 1000 && WiFi.status() != WL_CONNECTED) {
-        if (millis() > startConnectionIstant + WiFiMaxInitialTimeout) {
+      while (millis() - lastConnectionIstant < WiFiIntervalTraConnetion && WiFi.status() != WL_CONNECTED) {
+        if (millis() - startConnectionIstant > WiFiMaxInitialTimeout) {
           timeout = true;
           break;
         }
-        if (millis() < t1 + 200) {
+        if (millis() - t1 < 250) {
           digitalWrite(ConnLedPin, HIGH);
         } else {
-          if (millis() > t1 + 700) {
+          if (millis() - t1 > 1500) {
             t1 = millis();
           }
           digitalWrite(ConnLedPin, LOW);
@@ -201,23 +218,23 @@ void ConnectionManager::startWiFi(const char ssid[], const char pass[], byte ret
       }
       digitalWrite(ConnLedPin, LOW);
       if (timeout) {
-        debugPort->println("La connessione ha impiegato più tempo del dovuto, ARRESTATA!");
-        _state = NOT_CONNECTED;
+        debugPort->println("[LOG]: La connessione ha impiegato più tempo del dovuto, ARRESTATA!");
         break;
       }
     }
-  } else {
+    _state = whitReconnection ? DISCONNECTED : NOT_CONNECTED;
+  } else {	//Bloccante
     uint32_t i = 0;
     while (WiFi.status() != WL_CONNECTED) {
       i++;
       WiFi.begin(ssid, pass);
       lastConnectionIstant = millis();
-      debugPort->printf("Tentativo di connessione n %d...\n", i);
-      while (millis() < lastConnectionIstant + WiFiIntervalTraConnetion && WiFi.status() != WL_CONNECTED) {
-        if (millis() < t1 + 200) {
+      debugPort->printf("[LOG]: Tentativo di connessione n %d...\n", i);
+      while (millis() - lastConnectionIstant < WiFiIntervalTraConnetion && WiFi.status() != WL_CONNECTED) {
+        if (millis() - t1 < 250) {
           digitalWrite(ConnLedPin, HIGH);
         } else {
-          if (millis() > t1 + 700) {
+          if (millis() - t1 > 1500) {
             t1 = millis();
           }
           digitalWrite(ConnLedPin, LOW);
@@ -240,16 +257,16 @@ void ConnectionManager::startOTA() {
       type = "filesystem";
 
     // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-    debugPort->println("Start updating " + type);
+    debugPort->println("[OTA LOG]: Start updating " + type);
   })
   .onEnd([&]() {
-    debugPort->println("\nEnd");
+    debugPort->println("\n[OTA LOG]: End");
   })
   .onProgress([&](unsigned int progress, unsigned int total) {
-    debugPort->printf("Progress: %u%%\r", (progress / (total / 100)));
+    debugPort->printf("\n[OTA LOG]: Progress: %u%%\r", (progress / (total / 100)));
   })
   .onError([&](ota_error_t error) {
-    debugPort->printf("Error[%u]: ", error);
+    debugPort->printf("\n[OTA ERR]: Error[%u]: ", error);
     if (error == OTA_AUTH_ERROR) debugPort->println("Auth Failed");
     else if (error == OTA_BEGIN_ERROR) debugPort->println("Begin Failed");
     else if (error == OTA_CONNECT_ERROR) debugPort->println("Connect Failed");
@@ -257,8 +274,8 @@ void ConnectionManager::startOTA() {
     else if (error == OTA_END_ERROR) debugPort->println("End Failed");
   });
   ArduinoOTA.begin();
-  OTAHostname = ArduinoOTA.getHostname();
   OTAStarted = true;
+  
 }
 
 void ConnectionManager::startWebServer() {
@@ -266,7 +283,7 @@ void ConnectionManager::startWebServer() {
     serverPtr->begin();
     serverStarted = true;
   } else {
-    debugPort->println("Errore nell'inizializzare il WebServer, server non impostato!");
+    debugPort->println("[ERR]: Errore nell'inizializzare il WebServer, server non impostato!");
   }
 }
 
@@ -301,12 +318,12 @@ void ConnectionManager::_loop(bool withServer, bool withOTA) {
     if (ConnButtonState && !ConnButtonStateP ) {
       ConnButtonIstantUP = millis();
       if (_state == WPS_TIMEOUT || _state == WPS_FAILED) {
-        debugPort->println("Ripristino la connessione");
+        debugPort->println("[LOG]: Ripristino la connessione");
         WiFiAutoReconnect = true;
         _state = DISCONNECTED;
       }
       if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("Disconnecting from WiFi!");
+        debugPort->println("[LOG]: Disconnecting from WiFi!");
         WiFi.disconnect();
         WiFiAutoReconnect = false;
       } else {
@@ -320,28 +337,41 @@ void ConnectionManager::_loop(bool withServer, bool withOTA) {
     }
 
     //WPS CONNECTION ON BUTTON PRESSED //OK
-    uint32_t dt = ConnButtonIstantUP + CONN_BUTTON_FIRST_INTERVAL;
-    if (millis() > dt && millis() < dt + 250 && WPSConfigured && !WPSDisabled) {
-      if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("Starting WPS connection!");
-        WPSConnect();
-      } else if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("Disconnecting from WiFi!");
-        WiFi.disconnect();
-        Serial.println("Starting WPS connection!");
-        WPSConnect();
-      }
-    }
+    if(ConnButtonState){
+	    if (millis() - ConnButtonIstantUP > CONN_BUTTON_FIRST_INTERVAL && _state != WPS_CONNECTION) {
+      	if(!WPSConfigurated){
+	      	setupWPS();
+	      }
+        if(WPSConfigurated){
+  	      if(_state != WPS_CONNECTION){
+  	      	_state = WPS_CONNECTION;
+  		      if (WiFi.status() != WL_CONNECTED) {
+  		        debugPort->println("[LOG]: Starting WPS connection!");
+  		        WPSConnect();
+  		      } else if (WiFi.status() == WL_CONNECTED) {
+  		        debugPort->println("[LOG]: Disconnecting from WiFi!");
+  		        WiFi.disconnect();
+  		        debugPort->println("[LOG]: Starting WPS connection!");
+  		        WPSConnect();
+  		      }
+  		    }
+        }else{
+          debugPort->println("[ERR]: WPS is not configurated, CANNOT start WPS connection!");
+          _state = WPS_FAILED;
+        }
+	    }
+		}
   }
   ConnButtonStateP = ConnButtonState;
 }
 
-void ConnectionManager::connectionHandler() {        //TO DO //gestisce lo stato e le riconnessioni, return: stato
+void ConnectionManager::connectionHandler() {       //gestisce lo stato e le riconnessioni, return: stato
   //Reconnect //OK
-  if(WiFi.status() == WL_DISCONNECTED && _state != WPS_CONNECTION){
+  if(WiFi.status() != WL_CONNECTED && _state == CONNECTED){
     _state = DISCONNECTED;
   }
   switch (_state) {
+  	//case NOT_CONNECTED:
     case DISCONNECTED:
       if(WiFiAutoReconnect){
         WiFiReconnect();
@@ -349,10 +379,9 @@ void ConnectionManager::connectionHandler() {        //TO DO //gestisce lo stato
       break;
     case CONNECTED:
       lastWiFiConnectedIstant = millis();
-      if (WPSDisabled) {
-        debugPort->println("Enabling WPS after reconnetion!");
-        esp_wifi_wps_enable(&config);
-        WPSDisabled = false;
+      if (!WPSConfigurated) {
+        debugPort->println("[LOG]: Enabling WPS after reconnetion!");
+        setupWPS();
       }
       break;
   }
@@ -370,15 +399,15 @@ void ConnectionManager::connectionLedRoutine() {     //TO DO //CONTROLLA IL LED
       digitalWrite(ConnLedPin, LOW);
       break;
     case WPS_CONNECTION:
-      if (millis() > t1 + WPSBlinkInterval) {
+      if (millis() - t1 > WPSBlinkInterval) {
         t1 = millis();
         digitalWrite(ConnLedPin, !digitalRead(ConnLedPin));
       }
       break;
     case WPS_TIMEOUT:
     case WPS_FAILED:
-      if (millis() < t1 + 2000) {
-        int dt = millis() - t1;
+      if (millis() - t1 < 2000) {
+        uint32_t dt = millis() - t1;
         if (dt < 200) {
           digitalWrite(ConnLedPin, HIGH);
         } else if (200 <= dt && dt < 2 * 200) {
@@ -399,7 +428,7 @@ void ConnectionManager::setupWiFi() {
   WiFi.onEvent([&](WiFiEvent_t event, system_event_info_t info) {
     WiFiEvent(event, info);
   });
-  WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_MODE_STA);
   pinMode(ConnLedPin, OUTPUT);
   pinMode(ConnButtonPin, ConnButtonMode);
   if (ConnButtonMode == PULLUP || ConnButtonPinMode == INPUT_PULLUP) {
@@ -412,39 +441,33 @@ void ConnectionManager::setupWiFi() {
 void ConnectionManager::WiFiEvent(WiFiEvent_t event, system_event_info_t info) {
   switch (event) {
     case SYSTEM_EVENT_STA_START:
-      debugPort->println("Station Mode Started");
+      debugPort->println("[LOG]: Station Mode Started");
       _state = NOT_CONNECTED;
       break;
     case SYSTEM_EVENT_STA_GOT_IP:
-      debugPort->println("Connected to: " + String(WiFi.SSID()));
-      debugPort->print("Got IP: ");
+      debugPort->println("[LOG]: Connected to: " + String(WiFi.SSID()));
+      debugPort->print("[LOG]: Got IP: ");
       debugPort->println(WiFi.localIP());
       _state = CONNECTED;
       reconnectionTimes = 0;
       break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-      if (_state != DISCONNECTED) {
-        debugPort->println("Disconnected from station");
-        _state = DISCONNECTED;
-      }
-      break;
     case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
-      debugPort->println("WPS Successfull, stopping WPS and connecting to: " + String(WiFi.SSID()));
+      debugPort->println("[LOG]: WPS Successfull, stopping WPS and connecting to: " + String(WiFi.SSID()));
       esp_wifi_wps_disable();
+      startConnection();
       delay(10);
-      WiFi.begin();
+      setupWPS();
+      WiFiAutoReconnect = true;
       break;
     case SYSTEM_EVENT_STA_WPS_ER_FAILED:
-      debugPort->println("WPS Failed");
+      debugPort->println("[ERR]: WPS Failed");
       _state = WPS_FAILED;
-      esp_wifi_wps_disable();
-      esp_wifi_wps_enable(&config);
+      setupWPS();
       break;
     case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT:
-      debugPort->println("WPS Timeout");
+      debugPort->println("[ERR]: WPS Timeout");
       _state = WPS_TIMEOUT;
-      esp_wifi_wps_disable();
-      esp_wifi_wps_enable(&config);
+      setupWPS();
       break;
     default:
       break;
@@ -452,45 +475,56 @@ void ConnectionManager::WiFiEvent(WiFiEvent_t event, system_event_info_t info) {
 }
 
 void ConnectionManager::setupWPS() {
-  debugPort->println("Starting WPS service");
-  if (WPSDefaultConfig) {
-    debugPort->println("Setting default WPS config!");
-    setDefaultWPSConfig();
-  }
-  esp_wifi_wps_enable(&config);
-  WPSConfigured = true;
+	if(config == NULL){
+		debugPort->println("[ERR]: WPS config struct is a NULL pointer, CANNOT start WPS service!!");
+		WPSConfigurated = false;
+		return;
+	}
+	debugPort->println("[LOG]: Starting WPS service");
+	if (WPSDefaultConfig) {
+		debugPort->println("[LOG]: Setting default WPS config!");
+		setDefaultWPSConfig();
+	}
+	esp_wifi_wps_disable();
+	esp_wifi_wps_enable(config);
+	WPSConfigurated = true;
 }
 
 void ConnectionManager::setDefaultWPSConfig() {
-  config.crypto_funcs = &g_wifi_default_wps_crypto_funcs;
-  config.wps_type = ESP_WPS_MODE;
-  strcpy(config.factory_info.manufacturer, ESP_MANUFACTURER);
-  strcpy(config.factory_info.model_number, ESP_MODEL_NUMBER);
-  strcpy(config.factory_info.model_name, ESP_MODEL_NAME);
-  strcpy(config.factory_info.device_name, ESP_DEVICE_NAME);
+	if(config != NULL){
+		config->crypto_funcs = &g_wifi_default_wps_crypto_funcs;
+		config->wps_type = ESP_WPS_MODE;
+		strcpy(config->factory_info.manufacturer, ESP_MANUFACTURER);
+		strcpy(config->factory_info.model_number, ESP_MODEL_NUMBER);
+		strcpy(config->factory_info.model_name, ESP_MODEL_NAME);
+		strcpy(config->factory_info.device_name, ESP_DEVICE_NAME);
+	}else{
+		debugPort->println("[ERR]: WPS config struct is a NULL pointer, CANNOT set default configurations!!");
+	}
 }
 
 void ConnectionManager::WiFiConnect() {
+  uint32_t t0;
   uint32_t t1;
-  uint32_t t2;
-  if (millis() > lastConnectionIstant + 5000 || _state == FIRST_CONNECTION) {
-    debugPort->println("Trying to connect the last WiFi connection... ");
+  if (millis() - lastConnectionIstant > WiFiIntervalTraConnetion || _state == FIRST_CONNECTION) {
+    debugPort->println("[LOG]: Trying to connect the last WiFi connection... ");
     for (int i = 0; i < 8; i++) {
       if ( WiFi.status() != WL_CONNECTED) {
         WiFi.begin();
         lastConnectionIstant = millis();
+        t0 = millis();
         t1 = millis();
-        t2 = millis();
-        debugPort->println("Wait for connection...");
-        while (millis() < t1 + 1500) {
-          //LAMPEGGIO ASINCRONO NON BLOCCANTE
-          if (millis() < t2 + 200) {
+        debugPort->println("[LOG]: Wait for connection...");
+        //LAMPEGGIO ASINCRONO 
+        while (millis() - t0 < WiFiIntervalTraConnetion) {	//Tempo di delay
+        	if ( WiFi.status() == WL_CONNECTED) break;
+        	uint32_t dt = millis() - t1;
+          if (dt < 250) {												//Tempo ON
             digitalWrite(ConnLedPin, HIGH);
-          } else {
-            if (millis() > t2 + 700) {
-              t2 = millis();
-            }
+          } else if(250 <= dt && dt < 1000){		//Tempo OFF
             digitalWrite(ConnLedPin, LOW);
+          }else{
+          	t1 = millis();											//Reset
           }
         }
       } else {
@@ -503,10 +537,10 @@ void ConnectionManager::WiFiConnect() {
 }
 
 void ConnectionManager::WiFiReconnect() {
-  if (millis() - lastConnectionIstant > 5000) {
+  if (millis() - lastConnectionIstant > WiFiIntervalTraConnetion) {
     //Reboot fro retries
     if (RebootOnReconectionMaxTimes && reconnectionTimes == maxReconnetcRetries) {
-      debugPort->println("REBOOTING: for max reconnection times!!");
+      debugPort->println("[REBOOTING]: max reconnection times!!");
       if (onRebootCallback != NULL) {
         onRebootCallback();
       }
@@ -514,25 +548,25 @@ void ConnectionManager::WiFiReconnect() {
     }
     //Reboot for time
     if (RebootOnReconectionMaxTime && WiFiAutoReconnect && millis() - lastWiFiConnectedIstant > maxDisconnectedTime) {
-      debugPort->println("REBOOTING: too much time is passed from the last connected time! ");
+      debugPort->println("[REBOOTING]: too much time is passed from the last connected time! ");
       if (onRebootCallback != NULL) {
         onRebootCallback();
         delay(250);
       }
       ESP.restart();
     }
-    debugPort->println("Reconnecting... ");
-    if (WiFi.status() != WL_CONNECTED && _state != WPS_CONNECTION) {
+    debugPort->println("[LOG]: Reconnecting... ");
+    if (_state == DISCONNECTED){
       lastConnectionIstant = millis();
-      if (WPSConfigured && !WPSDisabled) {
-        debugPort->println("Disabling WPS for try reconnection!");
+      if (WPSConfigurated) {
+        debugPort->println("[LOG]: Disabling WPS for try reconnection!");
         esp_wifi_wps_disable();
-        WPSDisabled = true;
+        WPSConfigurated = false;
       }
       if (RebootOnReconectionMaxTimes) {
-        debugPort->printf("Tentativo di riconnessione n %d di %d...\n", reconnectionTimes + 1, maxReconnetcRetries);
+        debugPort->printf("[LOG]: Tentativo di riconnessione n %d di %d...\n", reconnectionTimes + 1, maxReconnetcRetries);
       } else {
-        debugPort->printf("Tentativo di riconnessione n %d...\n", reconnectionTimes + 1);
+        debugPort->printf("[LOG]: Tentativo di riconnessione n %d...\n", reconnectionTimes + 1);
       }
       WiFi.begin();
       reconnectionTimes++;
@@ -541,6 +575,7 @@ void ConnectionManager::WiFiReconnect() {
 }
 
 void ConnectionManager::WPSConnect() {
+	WiFi.disconnect();
   esp_wifi_wps_start(120000);
   _state = WPS_CONNECTION;
 }

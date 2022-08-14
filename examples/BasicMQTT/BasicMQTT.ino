@@ -1,16 +1,20 @@
 #include <MQTTManager.h>
 #include <WebServer.h>
 
+//MQTT
 WiFiClient espClient;
 PubSubClient client(espClient);
 const char* mosquittoServer = "test.mosquitto.org";
 String topics[2] = {"test/topic1",
                     "test/topic2"};
 
+//ConnectionManager
 WebServer server(80);
-
 MQTTManager connectionManager;
+esp_wps_config_t config;
 
+
+//WiFi [not necessary]
 const char* ssid = "YOUR_SSID";
 const char* pass = "YOUR_PASS";
 
@@ -53,10 +57,13 @@ void setup() {
   // set olso /IP_ADD/reboot for call rebootCallback and after reboots the core
   //      and /IP_ADD/rebootOnly thats reboot ESP32 whitout calling callBack
   connectionManager.setServer(&server, true);
+
+  //For enable WPS must use:
+  connectionManager.setWPSConfig(&config);
   //Connect to a WiFi for the first time
-  connectionManager.startWiFi(ssid, pass);
-  //For enable WPS may use:
-  //connectionManager.startConnection(bool whitWPS = true);
+  //connectionManager.startWiFi(ssid, pass);
+  //or
+  connectionManager.startConnection(true);
 
   //Start WebServer and OTA
   connectionManager.startWebServer();
@@ -66,10 +73,6 @@ void setup() {
   //Setting rebootCallback and reboot options
   connectionManager.setOnRebootCallback(rebootCallback);
   connectionManager.setRebootOptions(false, true, false, true);
-
-  //Print the hostname
-  Serial.println("You can reach me also at: " + connectionManager.getOTAHostname() + ".local/");
-
 
   //Setting MQTT server
   connectionManager.setMQTTServer(&client, "ESP32", mosquittoServer);
@@ -84,4 +87,9 @@ void loop() {
   //this update everything, connection LED (default on-board led), connection BUTTON (default on-board BOOT button), servers... 
   //ATTENTION: in case of MQTT connection falliture can block the prosess for several seconds
   connectionManager.loop();
+
+  if(millis() - t > 1000){
+    t = millis();
+    Serial.println(connectionManager.getStringState());
+  }
 }

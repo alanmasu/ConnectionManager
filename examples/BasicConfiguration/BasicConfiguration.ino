@@ -1,9 +1,11 @@
 #include <ConnectionManager.h>
 
+//ConnectionManager
 WebServer server(80);
-
 ConnectionManager connectionManager;
+esp_wps_config_t config;
 
+//WiFi [not necessary whit 'startConnection()']
 const char* ssid = "YOUR_SSID";
 const char* pass = "YOUR_PASS";
 
@@ -15,21 +17,24 @@ void setup() {
   //Start serial
   Serial.begin(115200);
 
-  //Creatin a variable to store version of the project
+  //Creating a variable to store version of the project
   String ver = String(__FILE__) + " Time: " + String(__DATE__) + " " + String(__TIME__);
   Serial.println("Version: " + ver);
 
-  //Setting version on WebServer /IP_ADD/info
+  //Setting version on WebServer /IP_ADD/infoAbout
   connectionManager.setVersion(ver);
   //Setting server
   // true -> whitDefaultHomePage
   // set olso /IP_ADD/reboot for call rebootCallback and after reboots the core
   //      and /IP_ADD/rebootOnly thats reboot ESP32 whitout calling callBack
   connectionManager.setServer(&server, true);
+  
+  //For enable WPS you must use:  
+  connectionManager.setWPSConfig(&config);
   //Connect to a WiFi for the first time
   //connectionManager.startWiFi(ssid, pass);
-  //For enable WPS may use:
-  connectionManager.startConnection(true);
+  //or
+  connectionManager.startConnection(true, false);
 
   //Start WebServer and OTA
   connectionManager.startWebServer();
@@ -40,11 +45,15 @@ void setup() {
   connectionManager.setOnRebootCallback(rebootCallback);
   connectionManager.setRebootOptions(false, true);
 
-  //Print the hostname
-  Serial.println("You can reach me also at: " + connectionManager.getOTAHostname() + ".local/");
 }
+
+uint32_t t = 0;
 
 void loop() {
   //this update everything, connection LED (default on-board led), connection BUTTON (default on-board BOOT button), servers... 
   connectionManager.loop();
+  if(millis() - t > 1000){
+    t = millis();
+    Serial.println(connectionManager.getStringState());
+  }
 }
