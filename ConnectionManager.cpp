@@ -407,7 +407,7 @@ void ConnectionManager::connectionLedRoutine() {     //TO DO //CONTROLLA IL LED
     case WPS_TIMEOUT:
     case WPS_FAILED:
       if (millis() - t1 < 2000) {
-        int dt = millis() - t1;
+        uint32_t dt = millis() - t1;
         if (dt < 200) {
           digitalWrite(ConnLedPin, HIGH);
         } else if (200 <= dt && dt < 2 * 200) {
