@@ -453,9 +453,10 @@ void ConnectionManager::WiFiEvent(WiFiEvent_t event, system_event_info_t info) {
       break;
     case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
       debugPort->println("[LOG]: WPS Successfull, stopping WPS and connecting to: " + String(WiFi.SSID()));
-      setupWPS();
+      esp_wifi_wps_disable();
+      startConnection();
       delay(10);
-      WiFi.begin();
+      setupWPS();
       WiFiAutoReconnect = true;
       break;
     case SYSTEM_EVENT_STA_WPS_ER_FAILED:
@@ -574,6 +575,7 @@ void ConnectionManager::WiFiReconnect() {
 }
 
 void ConnectionManager::WPSConnect() {
+	WiFi.disconnect();
   esp_wifi_wps_start(120000);
   _state = WPS_CONNECTION;
 }
