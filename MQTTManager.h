@@ -62,10 +62,10 @@ class MQTTManager : public ConnectionManager {
     void setDisconnectBlink(uint16_t interval);
     void setRebootOptions(bool forTime = REBOOT_ON_NOT_RECONNECTION_FOR_TIME,
                           bool forRetries = REBOOT_ON_NOT_RECONNECTION_FOR_RETRIES,
-                          uint16_t max_time = MAX_DISCONNECTED_TIME,
-                          uint32_t max_retries = MAX_RECONNECTION_TIMES,
                           bool forMQTTTime = REBOOT_ON_NOT_MQTT_RECONNECTION_FOR_TIME,
                           bool forMQTTRetries = REBOOT_ON_NOT_MQTT_RECONNECTION_FOR_RETRIES,
+                          uint16_t max_time = MAX_DISCONNECTED_TIME,
+                          uint32_t max_retries = MAX_RECONNECTION_TIMES,
                           uint16_t maxMQTTTtime = MAX_MQTT_DISCONNECTED_TIME,
                           uint32_t maxMQTTRetries = MAX_MQTT_RECONNECTION_TIMES);
 
