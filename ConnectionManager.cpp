@@ -113,16 +113,16 @@ void ConnectionManager::setVersion(String ver) {
 }
 
 void ConnectionManager::setOTAHostname(String h) {
-	if(h != ""){
-	  if (!MDNS.begin(h.c_str())) {
-	  	OTAHostname = "";
-	  }else{
-	  	OTAHostname = h;
-	  	debugPort->println("[LOG]: You can reach me also at: " + OTAHostname + ".local/");
-	  }
-	}else{
-		debugPort->println("[ERR]: Hostname is an empty string");
-	}
+  if(h != ""){
+    if (!MDNS.begin(h.c_str())) {
+      OTAHostname = "";
+    }else{
+      OTAHostname = h;
+      debugPort->println("[LOG]: You can reach me also at: " + OTAHostname + ".local/");
+    }
+  }else{
+    debugPort->println("[ERR]: Hostname is an empty string");
+  }
 }
 
 void ConnectionManager::setHomepage() {
@@ -181,9 +181,9 @@ void ConnectionManager::startConnection(bool withWPS, bool tryReconnection) {
     setupWPS();
   }
   if(tryReconnection){
-  	if(_state == NOT_CONNECTED){
-  		_state = DISCONNECTED;
-  	}
+    if(_state == NOT_CONNECTED){
+      _state = DISCONNECTED;
+    }
   }
 }
 
@@ -223,7 +223,7 @@ void ConnectionManager::startWiFi(const char ssid[], const char pass[], byte ret
       }
     }
     _state = whitReconnection ? DISCONNECTED : NOT_CONNECTED;
-  } else {	//Bloccante
+  } else {  //Bloccante
     uint32_t i = 0;
     while (WiFi.status() != WL_CONNECTED) {
       i++;
@@ -338,29 +338,29 @@ void ConnectionManager::_loop(bool withServer, bool withOTA) {
 
     //WPS CONNECTION ON BUTTON PRESSED //OK
     if(ConnButtonState){
-	    if (millis() - ConnButtonIstantUP > CONN_BUTTON_FIRST_INTERVAL && _state != WPS_CONNECTION) {
-      	if(!WPSConfigurated){
-	      	setupWPS();
-	      }
+      if (millis() - ConnButtonIstantUP > CONN_BUTTON_FIRST_INTERVAL && _state != WPS_CONNECTION) {
+        if(!WPSConfigurated){
+          setupWPS();
+        }
         if(WPSConfigurated){
-  	      if(_state != WPS_CONNECTION){
-  	      	_state = WPS_CONNECTION;
-  		      if (WiFi.status() != WL_CONNECTED) {
-  		        debugPort->println("[LOG]: Starting WPS connection!");
-  		        WPSConnect();
-  		      } else if (WiFi.status() == WL_CONNECTED) {
-  		        debugPort->println("[LOG]: Disconnecting from WiFi!");
-  		        WiFi.disconnect();
-  		        debugPort->println("[LOG]: Starting WPS connection!");
-  		        WPSConnect();
-  		      }
-  		    }
+          if(_state != WPS_CONNECTION){
+            _state = WPS_CONNECTION;
+            if (WiFi.status() != WL_CONNECTED) {
+              debugPort->println("[LOG]: Starting WPS connection!");
+              WPSConnect();
+            } else if (WiFi.status() == WL_CONNECTED) {
+              debugPort->println("[LOG]: Disconnecting from WiFi!");
+              WiFi.disconnect();
+              debugPort->println("[LOG]: Starting WPS connection!");
+              WPSConnect();
+            }
+          }
         }else{
           debugPort->println("[ERR]: WPS is not configurated, CANNOT start WPS connection!");
           _state = WPS_FAILED;
         }
-	    }
-		}
+      }
+    }
   }
   ConnButtonStateP = ConnButtonState;
 }
@@ -371,7 +371,7 @@ void ConnectionManager::connectionHandler() {       //gestisce lo stato e le ric
     _state = DISCONNECTED;
   }
   switch (_state) {
-  	//case NOT_CONNECTED:
+    //case NOT_CONNECTED:
     case DISCONNECTED:
       if(WiFiAutoReconnect){
         WiFiReconnect();
@@ -425,10 +425,10 @@ void ConnectionManager::connectionLedRoutine() {     //TO DO //CONTROLLA IL LED
 }
 
 void ConnectionManager::setupWiFi() {
+  WiFi.mode(WIFI_MODE_STA);
   WiFi.onEvent([&](WiFiEvent_t event, system_event_info_t info) {
     WiFiEvent(event, info);
   });
-  WiFi.mode(WIFI_MODE_STA);
   pinMode(ConnLedPin, OUTPUT);
   pinMode(ConnButtonPin, ConnButtonMode);
   if (ConnButtonMode == PULLUP || ConnButtonPinMode == INPUT_PULLUP) {
@@ -475,32 +475,32 @@ void ConnectionManager::WiFiEvent(WiFiEvent_t event, system_event_info_t info) {
 }
 
 void ConnectionManager::setupWPS() {
-	if(config == NULL){
-		debugPort->println("[ERR]: WPS config struct is a NULL pointer, CANNOT start WPS service!!");
-		WPSConfigurated = false;
-		return;
-	}
-	debugPort->println("[LOG]: Starting WPS service");
-	if (WPSDefaultConfig) {
-		debugPort->println("[LOG]: Setting default WPS config!");
-		setDefaultWPSConfig();
-	}
-	esp_wifi_wps_disable();
-	esp_wifi_wps_enable(config);
-	WPSConfigurated = true;
+  if(config == NULL){
+    debugPort->println("[ERR]: WPS config struct is a NULL pointer, CANNOT start WPS service!!");
+    WPSConfigurated = false;
+    return;
+  }
+  debugPort->println("[LOG]: Starting WPS service");
+  if (WPSDefaultConfig) {
+    debugPort->println("[LOG]: Setting default WPS config!");
+    setDefaultWPSConfig();
+  }
+  esp_wifi_wps_disable();
+  esp_wifi_wps_enable(config);
+  WPSConfigurated = true;
 }
 
 void ConnectionManager::setDefaultWPSConfig() {
-	if(config != NULL){
-		config->crypto_funcs = &g_wifi_default_wps_crypto_funcs;
-		config->wps_type = ESP_WPS_MODE;
-		strcpy(config->factory_info.manufacturer, ESP_MANUFACTURER);
-		strcpy(config->factory_info.model_number, ESP_MODEL_NUMBER);
-		strcpy(config->factory_info.model_name, ESP_MODEL_NAME);
-		strcpy(config->factory_info.device_name, ESP_DEVICE_NAME);
-	}else{
-		debugPort->println("[ERR]: WPS config struct is a NULL pointer, CANNOT set default configurations!!");
-	}
+  if(config != NULL){
+    config->crypto_funcs = &g_wifi_default_wps_crypto_funcs;
+    config->wps_type = ESP_WPS_MODE;
+    strcpy(config->factory_info.manufacturer, ESP_MANUFACTURER);
+    strcpy(config->factory_info.model_number, ESP_MODEL_NUMBER);
+    strcpy(config->factory_info.model_name, ESP_MODEL_NAME);
+    strcpy(config->factory_info.device_name, ESP_DEVICE_NAME);
+  }else{
+    debugPort->println("[ERR]: WPS config struct is a NULL pointer, CANNOT set default configurations!!");
+  }
 }
 
 void ConnectionManager::WiFiConnect() {
@@ -516,15 +516,15 @@ void ConnectionManager::WiFiConnect() {
         t1 = millis();
         debugPort->println("[LOG]: Wait for connection...");
         //LAMPEGGIO ASINCRONO 
-        while (millis() - t0 < WiFiIntervalTraConnetion) {	//Tempo di delay
-        	if ( WiFi.status() == WL_CONNECTED) break;
-        	uint32_t dt = millis() - t1;
-          if (dt < 250) {												//Tempo ON
+        while (millis() - t0 < WiFiIntervalTraConnetion) {  //Tempo di delay
+          if ( WiFi.status() == WL_CONNECTED) break;
+          uint32_t dt = millis() - t1;
+          if (dt < 250) {                       //Tempo ON
             digitalWrite(ConnLedPin, HIGH);
-          } else if(250 <= dt && dt < 1000){		//Tempo OFF
+          } else if(250 <= dt && dt < 1000){    //Tempo OFF
             digitalWrite(ConnLedPin, LOW);
           }else{
-          	t1 = millis();											//Reset
+            t1 = millis();                      //Reset
           }
         }
       } else {
@@ -575,7 +575,7 @@ void ConnectionManager::WiFiReconnect() {
 }
 
 void ConnectionManager::WPSConnect() {
-	WiFi.disconnect();
+  WiFi.disconnect();
   esp_wifi_wps_start(120000);
   _state = WPS_CONNECTION;
 }
