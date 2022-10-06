@@ -168,6 +168,9 @@ void MQTTManager::connectionHandler() {
         }
       }
     }
+    if(WiFi.status() != WL_CONNECTED && _state == MQTT_CONNECTED){
+      _state = DISCONNECTED;
+    }
     ConnectionManager::connectionHandler();
     
     switch (_state) {
