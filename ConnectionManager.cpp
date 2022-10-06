@@ -187,7 +187,7 @@ void ConnectionManager::startConnection(bool withWPS, bool tryReconnection) {
   }
 }
 
-void ConnectionManager::startWiFi(const char ssid[], const char pass[], byte retries, bool bloc, bool whitReconnection) {
+void ConnectionManager::startWiFi(const char* ssid, const char* pass, byte retries, bool bloc, bool whitReconnection) {
   bool timeout = false;
   _state = FIRST_CONNECTION;
   setupWiFi();
@@ -201,6 +201,9 @@ void ConnectionManager::startWiFi(const char ssid[], const char pass[], byte ret
     for (int i = -1; i < retries; i++) {
       lastConnectionIstant = millis();
       debugPort->printf("[LOG]: Tentativo di connessione n %d di %d...\n", i + 2, retries + 1);
+      if(WPSConfigurated){
+        esp_wifi_wps_disable();
+      }
       WiFi.begin(ssid, pass);
       while (millis() - lastConnectionIstant < WiFiIntervalTraConnetion && WiFi.status() != WL_CONNECTED) {
         if (millis() - startConnectionIstant > WiFiMaxInitialTimeout) {
@@ -295,6 +298,17 @@ void ConnectionManager::loop(bool withServer, bool withOTA) {
 }
 
 
+void ConnectionManager::disconnect(){
+    if(WiFi.status() == WL_CONNECTED){
+        _state = DISCONNECTED;
+        WiFi.disconnect();
+        WiFiAutoReconnect = false;
+    }
+}
+
+void ConnectionManager::reconnect(){
+  WiFiAutoReconnect = true;
+}
 
 //PRVATE METODS
 void ConnectionManager::_loop(bool withServer, bool withOTA) {
@@ -425,6 +439,7 @@ void ConnectionManager::connectionLedRoutine() {     //TO DO //CONTROLLA IL LED
 }
 
 void ConnectionManager::setupWiFi() {
+
   WiFi.mode(WIFI_MODE_STA);
   WiFi.onEvent([&](WiFiEvent_t event, system_event_info_t info) {
     WiFiEvent(event, info);
