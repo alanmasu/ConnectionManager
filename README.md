@@ -10,6 +10,9 @@ In caso di errori e tempi prolungati di disconnessione esegue un reboot, secondo
 
 Questa libreria utilizza principalmente un LED ed un solo pulsante per interfacciarsi con l'utente che deve collegare la scheda al proprio WiFi.
 
+## Dipendenze
+è basata sulla versione 1.0.4 del [ESP32 Core For Arduino](https://github.com/espressif/arduino-esp32)
+
 ## Connessione WPS
 
 La connessione WPS è un metodo di connessione ottimo per le tecnologie IoT, infatti non prevede la necessità di dover inserire password e/o codici, basta solamente impostare il proprio router in modalità accoppiamento e abilitare lo stesso sulla scheda.
