@@ -1,5 +1,6 @@
 
 #include "ConnectionManager.h"
+#include <functional>
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
@@ -301,7 +302,7 @@ void ConnectionManager::loop(bool withServer, bool withOTA) {
 void ConnectionManager::disconnect(){
     if(WiFi.status() == WL_CONNECTED){
         _state = DISCONNECTED;
-        WiFi.disconnect();
+        WiFi.disconnect(false, false);
         WiFiAutoReconnect = false;
     }
 }
@@ -335,13 +336,12 @@ void ConnectionManager::_loop(bool withServer, bool withOTA) {
         debugPort->println("[LOG]: Ripristino la connessione");
         WiFiAutoReconnect = true;
         _state = DISCONNECTED;
-      }
-      if (WiFi.status() == WL_CONNECTED) {
-        debugPort->println("[LOG]: Disconnecting from WiFi!");
-        WiFi.disconnect();
-        WiFiAutoReconnect = false;
+      }else if (WiFi.status() == WL_CONNECTED) {
+        disconnect();
       } else {
+        debugPort->println("[LOG]: Ripristino la connessione");
         WiFiAutoReconnect = true;
+        _state = DISCONNECTED;
       }
 
     }
@@ -359,15 +359,12 @@ void ConnectionManager::_loop(bool withServer, bool withOTA) {
         if(WPSConfigurated){
           if(_state != WPS_CONNECTION){
             _state = WPS_CONNECTION;
-            if (WiFi.status() != WL_CONNECTED) {
-              debugPort->println("[LOG]: Starting WPS connection!");
-              WPSConnect();
-            } else if (WiFi.status() == WL_CONNECTED) {
+            if (WiFi.status() == WL_CONNECTED) {
               debugPort->println("[LOG]: Disconnecting from WiFi!");
-              WiFi.disconnect();
-              debugPort->println("[LOG]: Starting WPS connection!");
-              WPSConnect();
             }
+            WiFi.disconnect(false, false);
+            debugPort->println("[LOG]: Starting WPS connection!");
+            WPSConnect();
           }
         }else{
           debugPort->println("[ERR]: WPS is not configurated, CANNOT start WPS connection!");
@@ -383,6 +380,7 @@ void ConnectionManager::connectionHandler() {       //gestisce lo stato e le ric
   //Reconnect //OK
   if(WiFi.status() != WL_CONNECTED && _state == CONNECTED){
     _state = DISCONNECTED;
+    //debugPort-printf("WiFi.status() != WL_CONNECTED && _state == CONNECTED: %d", WiFi.status() != WL_CONNECTED && _state == CONNECTED);
   }
   switch (_state) {
     //case NOT_CONNECTED:
@@ -439,9 +437,8 @@ void ConnectionManager::connectionLedRoutine() {     //TO DO //CONTROLLA IL LED
 }
 
 void ConnectionManager::setupWiFi() {
-
   WiFi.mode(WIFI_MODE_STA);
-  WiFi.onEvent([&](WiFiEvent_t event, system_event_info_t info) {
+  WiFi.onEvent([&](WiFiEvent_t event, arduino_event_info_t info){
     WiFiEvent(event, info);
   });
   pinMode(ConnLedPin, OUTPUT);
@@ -453,33 +450,37 @@ void ConnectionManager::setupWiFi() {
   digitalWrite(ConnLedPin, LOW);
 }
 
-void ConnectionManager::WiFiEvent(WiFiEvent_t event, system_event_info_t info) {
+void ConnectionManager::WiFiEvent(WiFiEvent_t event, arduino_event_info_t info) {
   switch (event) {
-    case SYSTEM_EVENT_STA_START:
+    case ARDUINO_EVENT_WIFI_STA_START:
       debugPort->println("[LOG]: Station Mode Started");
-      _state = NOT_CONNECTED;
+      //_state = NOT_CONNECTED;
       break;
-    case SYSTEM_EVENT_STA_GOT_IP:
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
       debugPort->println("[LOG]: Connected to: " + String(WiFi.SSID()));
       debugPort->print("[LOG]: Got IP: ");
       debugPort->println(WiFi.localIP());
       _state = CONNECTED;
       reconnectionTimes = 0;
       break;
-    case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
+    case ARDUINO_EVENT_WPS_ER_SUCCESS:
       debugPort->println("[LOG]: WPS Successfull, stopping WPS and connecting to: " + String(WiFi.SSID()));
       esp_wifi_wps_disable();
-      startConnection();
-      delay(10);
+      //disconnect();
+      delay(100);
+      //WiFi.begin();
+      //startConnection();
+      WiFiConnect();
+      delay(100);
       setupWPS();
       WiFiAutoReconnect = true;
       break;
-    case SYSTEM_EVENT_STA_WPS_ER_FAILED:
+    case ARDUINO_EVENT_WPS_ER_FAILED:
       debugPort->println("[ERR]: WPS Failed");
       _state = WPS_FAILED;
       setupWPS();
       break;
-    case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT:
+    case ARDUINO_EVENT_WPS_ER_TIMEOUT:
       debugPort->println("[ERR]: WPS Timeout");
       _state = WPS_TIMEOUT;
       setupWPS();
@@ -507,7 +508,6 @@ void ConnectionManager::setupWPS() {
 
 void ConnectionManager::setDefaultWPSConfig() {
   if(config != NULL){
-    config->crypto_funcs = &g_wifi_default_wps_crypto_funcs;
     config->wps_type = ESP_WPS_MODE;
     strcpy(config->factory_info.manufacturer, ESP_MANUFACTURER);
     strcpy(config->factory_info.model_number, ESP_MODEL_NUMBER);
@@ -523,9 +523,14 @@ void ConnectionManager::WiFiConnect() {
   uint32_t t1;
   if (millis() - lastConnectionIstant > WiFiIntervalTraConnetion || _state == FIRST_CONNECTION) {
     debugPort->println("[LOG]: Trying to connect the last WiFi connection... ");
+    wl_status_t status = WiFi.status();
     for (int i = 0; i < 8; i++) {
       if ( WiFi.status() != WL_CONNECTED) {
-        WiFi.begin();
+        if(status != WL_CONNECT_FAILED){//|| i == 0){
+          status = WiFi.begin();
+        }else{
+          WiFi.reconnect();
+        }
         lastConnectionIstant = millis();
         t0 = millis();
         t1 = millis();
@@ -583,14 +588,18 @@ void ConnectionManager::WiFiReconnect() {
       } else {
         debugPort->printf("[LOG]: Tentativo di riconnessione n %d...\n", reconnectionTimes + 1);
       }
-      WiFi.begin();
+      status = WiFi.status();
+      if(status != WL_CONNECT_FAILED){
+        status = WiFi.begin();
+      }else{
+        WiFi.reconnect();
+      }
       reconnectionTimes++;
     }
   }
 }
 
 void ConnectionManager::WPSConnect() {
-  WiFi.disconnect();
   esp_wifi_wps_start(120000);
   _state = WPS_CONNECTION;
 }
