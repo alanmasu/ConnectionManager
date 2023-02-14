@@ -113,6 +113,10 @@ void MQTTManager::setRebootOptions(bool forTime,      bool forRetries,      bool
   maxMQTTDisconnectedTime = maxMQTTTtime;
 }
 
+void MQTTManager::setAsyncFunction(void (*fn)(void)){
+  asyncFunction = fn;
+}
+
 byte MQTTManager::startMQTT() {
   if (MQTTServer != NULL) {
     MQTTLastConnectionIstant = millis();
@@ -146,16 +150,50 @@ void MQTTManager::setHomepage() {
 
 void MQTTManager::startConnection(bool withWPS, bool tryReconnection) {
   ConnectionManager::startConnection(withWPS, tryReconnection);
+  startMQTT();
+}
+
+void MQTTManager::startAsyncLoop(void (*fn)(void)){
+  asyncFunction = fn;
+  asyncMode = true;
+  auto funct = [](void* vPar){
+    MQTTManager* cmptr;
+    if(vPar != nullptr){
+      cmptr = (MQTTManager*)vPar;
+    }
+    while(1){
+      if(vPar != nullptr){
+        cmptr->connectionLedRoutine();
+        if(cmptr->asyncFunction != nullptr){       
+          cmptr->asyncFunction(); 
+        }
+      }
+      vTaskDelay(10);
+    }
+    vTaskDelete(NULL);
+  };
+  xTaskCreate(
+    funct,
+    "CONECTION_MANAGER_ASYNC",
+    2000,
+    (void*)this,
+    1,
+    &asyncTask
+  );
 }
 
 void MQTTManager::loop(bool withServer, bool withOTA ) {
-  ConnectionManager::loop(withServer, withOTA);
+  ConnectionManager::_loop(withServer, withOTA);
+  connectionHandler();
+  if(!asyncMode){
+    connectionLedRoutine();
+  }
   if (MQTTServer != NULL && MQTTServer->connected()) {
     MQTTServer->loop();
   }
 }
 
-//TO DO //gestisce lo stato e le riconnessioni, return: stato
+//TO DO //gestisce lo stato e le riconnessioni
 void MQTTManager::connectionHandler() { 
   //Controllo di stato
   if (MQTTServer != NULL) {
@@ -190,6 +228,7 @@ void MQTTManager::connectionHandler() {
     }
   }
 }
+
 void MQTTManager::connectionLedRoutine() {     //TO DO //CONTROLLA IL LED
   static uint32_t t1;
   switch (_state) {

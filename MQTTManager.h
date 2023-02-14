@@ -68,7 +68,7 @@ class MQTTManager : public ConnectionManager {
                           uint32_t max_retries = MAX_RECONNECTION_TIMES,
                           uint16_t maxMQTTTtime = MAX_MQTT_DISCONNECTED_TIME,
                           uint32_t maxMQTTRetries = MAX_MQTT_RECONNECTION_TIMES);
-
+    void setAsyncFunction(void (*fn)(void));
     //Getter
     String getStringState();
 
@@ -80,6 +80,7 @@ class MQTTManager : public ConnectionManager {
     virtual void setHomepage() override;
     virtual void startConnection(bool withWPS = true, bool tryReconnection = true) override;
 
+    void startAsyncLoop(void (*fn)(void) = nullptr);
   protected:
     PubSubClient *MQTTServer;
 
@@ -102,7 +103,16 @@ class MQTTManager : public ConnectionManager {
     String _name;
     String* topics;
     uint16_t topicsLen;
+
+    //Ridefinizioni dal server
     void subscribe(String* topics, uint16_t len);
+
+    //Async section
+    bool asyncMode = false;
+    void (*asyncFunction)(void);
+    TaskHandle_t asyncTask;
 };
+
+//void asyncTaskRoutine(void* vPar);
 
 #endif
