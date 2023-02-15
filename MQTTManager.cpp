@@ -156,6 +156,11 @@ void MQTTManager::startConnection(bool withWPS, bool tryReconnection) {
 void MQTTManager::startAsyncLoop(void (*fn)(void)){
   asyncFunction = fn;
   asyncMode = true;
+  if(fn != nullptr){
+    asyncFunction = fn;
+  }
+  asyncMode = true;
+  mutex = xSemaphoreCreateMutex();
   auto funct = [](void* vPar){
     MQTTManager* cmptr;
     if(vPar != nullptr){
@@ -163,7 +168,7 @@ void MQTTManager::startAsyncLoop(void (*fn)(void)){
     }
     while(1){
       if(vPar != nullptr){
-        cmptr->connectionLedRoutine();
+        cmptr->connectionHandler();
         if(cmptr->asyncFunction != nullptr){       
           cmptr->asyncFunction(); 
         }
@@ -184,18 +189,103 @@ void MQTTManager::startAsyncLoop(void (*fn)(void)){
 
 void MQTTManager::loop(bool withServer, bool withOTA ) {
   ConnectionManager::_loop(withServer, withOTA);
-  connectionHandler();
+  connectionLedRoutine();
   if(!asyncMode){
-    connectionLedRoutine();
+    connectionHandler();
   }
   if (MQTTServer != NULL && MQTTServer->connected()) {
     MQTTServer->loop();
   }
 }
 
+bool MQTTManager::publish(const char* topic, const char* payload){
+  if(mutex != NULL && asyncMode){
+    if(xSemaphoreTake(mutex, 100/portTICK_PERIOD_MS) == pdFALSE){
+      debugPort->println("[ERR]: Error publishing to MQTT server because mutex is taken");
+      return false;
+    }
+  }
+  bool status;
+  if(MQTTServer != nullptr){
+    status = MQTTServer->publish(topic, payload);
+  }
+  if(mutex != NULL && asyncMode){
+    xSemaphoreGive(mutex);
+  }
+  return status;
+}
+bool MQTTManager::publish(const char* topic, const String& payload){
+   if(mutex != NULL && asyncMode){
+    if(xSemaphoreTake(mutex, 100/portTICK_PERIOD_MS) == pdFALSE){
+      debugPort->println("[ERR]: Error publishing to MQTT server because mutex is taken");
+      return false;
+    }
+  }
+  bool status;
+  if(MQTTServer != nullptr){
+    status = MQTTServer->publish(topic, payload.c_str());
+  }
+  if(mutex != NULL && asyncMode){
+    xSemaphoreGive(mutex);
+  }
+  return status;
+}
+
+bool MQTTManager::publish(const char* topic, const char* payload, bool retained){
+   if(mutex != NULL && asyncMode){
+    if(xSemaphoreTake(mutex, 100/portTICK_PERIOD_MS) == pdFALSE){
+      debugPort->println("[ERR]: Error publishing to MQTT server because mutex is taken");
+      return false;
+    }
+  }
+  bool status;
+  if(MQTTServer != nullptr){
+    status = MQTTServer->publish(topic, payload, retained);
+  }
+  if(mutex != NULL && asyncMode){
+    xSemaphoreGive(mutex);
+  }
+  return status;
+}
+bool MQTTManager::publish(const char* topic, const uint8_t * payload, unsigned int plength){  
+   if(mutex != NULL && asyncMode){
+    if(xSemaphoreTake(mutex, 100/portTICK_PERIOD_MS) == pdFALSE){
+      debugPort->println("[ERR]: Error publishing to MQTT server because mutex is taken");
+      return false;
+    }
+  }
+  bool status;
+  if(MQTTServer != nullptr){
+    status = MQTTServer->publish(topic, payload, plength);
+  }
+  if(mutex != NULL && asyncMode){
+    xSemaphoreGive(mutex);
+  }
+  return status;
+}
+bool MQTTManager::publish(const char* topic, const uint8_t * payload, unsigned int plength, bool retained){
+   if(mutex != NULL && asyncMode){
+    if(xSemaphoreTake(mutex, 100/portTICK_PERIOD_MS) == pdFALSE){
+      debugPort->println("[ERR]: Error publishing to MQTT server because mutex is taken");
+      return false;
+    }
+  }
+  bool status;
+  if(MQTTServer != nullptr){
+    status = MQTTServer->publish(topic, payload, plength, retained);
+  }
+  if(mutex != NULL && asyncMode){
+    xSemaphoreGive(mutex);
+  }
+  return status;
+}
+
 //TO DO //gestisce lo stato e le riconnessioni
 void MQTTManager::connectionHandler() { 
   //Controllo di stato
+  if(mutex != NULL && asyncMode){
+    xSemaphoreTake(mutex, portMAX_DELAY);
+  }
   if (MQTTServer != NULL) {
     if (WiFi.status() == WL_CONNECTED && _state != MQTT_SUBSCRIBE_FAILED) {
       if (millis() - MQTTLastConnectionIstant > 2000) { //Per evitare false connessioni
@@ -205,6 +295,9 @@ void MQTTManager::connectionHandler() {
           _state = MQTT_DISCONNECTED;
         }
       }
+    }
+    if(mutex != NULL && asyncMode){
+      xSemaphoreGive(mutex);
     }
     if(WiFi.status() != WL_CONNECTED && _state == MQTT_CONNECTED){
       _state = DISCONNECTED;
@@ -225,6 +318,10 @@ void MQTTManager::connectionHandler() {
       case MQTT_SUBSCRIBE_FAILED:
         MQTTReconnect();
         break;
+    }
+  }else{
+    if(mutex != NULL && asyncMode){
+      xSemaphoreGive(mutex);
     }
   }
 }
@@ -273,6 +370,9 @@ void MQTTManager::connectionLedRoutine() {     //TO DO //CONTROLLA IL LED
 }
 
 void MQTTManager::MQTTReconnect() {
+  if(mutex != NULL && asyncMode){
+    xSemaphoreTake(mutex, portMAX_DELAY);
+  }
   if (MQTTServer != NULL && !MQTTServer->connected()) {
     //Reboot for reconnection times
     if (RebootOnMQTTReconectionMaxTimes && MQTTReconnectionTimes == maxMQTTReconnetcRetries) {
@@ -301,5 +401,8 @@ void MQTTManager::MQTTReconnect() {
       startMQTT();
       MQTTReconnectionTimes++;
     }
+  }
+  if(mutex != NULL && asyncMode){
+    xSemaphoreGive(mutex);
   }
 }

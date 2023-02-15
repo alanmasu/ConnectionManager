@@ -81,6 +81,15 @@ class MQTTManager : public ConnectionManager {
     virtual void startConnection(bool withWPS = true, bool tryReconnection = true) override;
 
     void startAsyncLoop(void (*fn)(void) = nullptr);
+
+    //Ridefinizioni dal server
+    void subscribe(String* topics, uint16_t len);
+    bool publish(const char* topic, const char* payload);
+    bool publish(const char* topic, const String& payload);
+    bool publish(const char* topic, const char* payload, bool retained);
+    bool publish(const char* topic, const uint8_t * payload, unsigned int plength);
+    bool publish(const char* topic, const uint8_t * payload, unsigned int plength, bool retained);
+    
   protected:
     PubSubClient *MQTTServer;
 
@@ -104,13 +113,12 @@ class MQTTManager : public ConnectionManager {
     String* topics;
     uint16_t topicsLen;
 
-    //Ridefinizioni dal server
-    void subscribe(String* topics, uint16_t len);
 
     //Async section
     bool asyncMode = false;
     void (*asyncFunction)(void);
     TaskHandle_t asyncTask;
+    SemaphoreHandle_t mutex;
 };
 
 //void asyncTaskRoutine(void* vPar);
