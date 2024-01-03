@@ -1,5 +1,7 @@
 #Cartelle
 Test
+docs
+.vscode
 
 #File
 examples/BasicMQTT/*.h
