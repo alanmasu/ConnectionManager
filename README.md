@@ -17,7 +17,7 @@ Questa libreria utilizza principalmente un LED ed un solo pulsante per interfacc
 
 La connessione WPS è un metodo di connessione ottimo per le tecnologie IoT, infatti non prevede la necessità di dover inserire password e/o codici, basta solamente impostare il proprio router in modalità accoppiamento e abilitare lo stesso sulla scheda.
 
-**Per utilizzare questa funzione è necessario impostare nel software la configurazione del WPS tramite [setWPSConfig](#setWPSConfig)**
+**Per utilizzare questa funzione è necessario impostare nel software la configurazione del WPS tramite [setWPSConfig](#ConnectionManager::setWPSConfig)**
 
 Per connettere tramite WPS la scheda è necessario:
 
@@ -44,7 +44,7 @@ Il led ha principalmente 4 possibili modalità:
 
 ### `startConnection`
 
-```c++
+```{cpp}
 virtual void startConnection(bool withWPS, bool tryReconnection)
 ```
 
@@ -63,7 +63,7 @@ Tenta la connessione all'ultima rete alla quale la scheda è stata connessa, ese
 
 ### `startWiFi`
 
-```c++
+```{cpp}
 void startWiFi(const char ssid[], const char pass[], byte retries, bool bloc, bool whitReconnection)
 ```
 
@@ -81,9 +81,9 @@ Esegue la connessione ad una specifica rete che viene settata mediante i paramet
 
 ***
 
-### `setWPSConfig`
+### <a name="ConnectionManager::setWPSConfig"></a>`setWPSConfig`
 
-```c++
+```{cpp}
 void setWPSConfig(esp_wps_config_t *spech, bool isNotDefault)
 ```
 
@@ -100,7 +100,7 @@ Serve per settare la struct delle configurazioni per il WPS, se non viene esegui
 
 ### `loop`
 
-```c++
+```{cpp}
 virtual void loop(bool withServer = true, bool withOTA = true)
 ```
 
@@ -117,7 +117,7 @@ Gestisce le funzioni di riconnessione, di connessione tramite WPS, il lampeggio 
 
 ### `getState`
 
-```c++
+```{cpp}
 uint8_t getState() const
 ```
 
@@ -139,7 +139,7 @@ Restituisce lo stato della connessione
 
 ### `getStringState`
 
-```c++
+```{cpp}
 virtual String getStringState()
 ```
 
@@ -157,7 +157,7 @@ Restituisce i valori di cui sopra in formato `String`
 
 #### `getOTAHostname`
 
-```c++
+```{cpp}
 String getOTAHostname()const
 ```
 
@@ -173,7 +173,7 @@ Restituisce una stringa vuota se l'assegnamento non è andato a buon fine
 
 #### `toString`
 
-```c++
+```{cpp}
 String toString()const
 ```
 
@@ -185,7 +185,7 @@ Restituisce una stringa dell'oggetto serializzato
 
 #### `setAutoReconnect`
 
-```c++
+```{cpp}
 void setAutoReconnect(bool en)
 ```
 
@@ -200,7 +200,7 @@ Serve per abilitare la riconnessione automatica, se combinata con `setRebootOpti
 ***
 #### `setReconnectTimeout`
 
-```c++
+```{cpp}
 void setReconnectTimeout(uint16_t time)
 ```
 
@@ -215,7 +215,7 @@ Setta il tempo tra una connessione e l'altra, va a modificare la proprietà `WiF
 ***
 #### `setRebootOptions`
 
-```c++
+```{cpp}
 void setRebootOptions(bool forTime , bool forRetries, uint16_t max_time, uint32_t max_retries)
 ```
 
@@ -234,7 +234,7 @@ Serve per settare le opzioni di rebooting in caso di disconnessione prolugata
 
 #### `setServer`
 
-```c++
+```{cpp}
 void setServer(WebServer *s, bool withHomepage = false)
 ```
 
@@ -256,7 +256,7 @@ Serve per passare il riferimento al WebServer, imposta le risposte alle seguenti
 
 #### `setHomepage`
 
-```c++
+```{cpp}
 virtual void setHomepage()
 ```
 
@@ -270,7 +270,7 @@ Imposta una home page di default raggiungibile tramite l'IP oppure l'hostname di
 
 #### `setDefaultWPSConfig`
 
-```c++
+```{cpp}
 void setDefaultWPSConfig()
 ```
 
@@ -284,7 +284,7 @@ Imposta i parametri di default nella configurazione del WPS
 
 #### `setStaticIPAddress`
 
-```c++
+```{cpp}
 void setStaticIPAddress(IPAddress ip, IPAddress gateway, IPAddress subnet, IPAddress DNS, IPAddress DNS2)
 ```
 
@@ -304,7 +304,7 @@ Seve per impostare staticamente i parametri di rete
 
 #### `setOnRebootCallback`
 
-```c++
+```{cpp}
 void setOnRebootCallback(void (*callback)(void)) 
 ```
 
@@ -320,7 +320,7 @@ Setta un puntatore a funzione che se impostato viene eseguito quando viene esegu
 
 #### `setWPSBlinkInterval`
 
-```c++
+```{cpp}
 void setWPSBlinkInterval(uint16_t time)
 ```
 
@@ -336,7 +336,7 @@ Serve per impostare la velocità di blink del LED di connessione durante la conn
 
 #### `setMaxInitialTimeout`
 
-```c++
+```{cpp}
 void setMaxInitialTimeout(uint16_t time)
 ```
 
@@ -354,7 +354,7 @@ Setta la proprietà `WiFiMaxInitialTimeout`, è il timeout massimo che può tras
 
 #### `configLedPin`
 
-```c++
+```{cpp}
 void configLedPin(byte pin);
 ```
 
@@ -370,7 +370,7 @@ Serve per impostare il pin del LED di connessione, setta già la modalità di qu
 
 #### `configButton`
 
-```c++
+```{cpp}
 void configButton(byte pin, byte connPinMode, byte mode)
 ```
 
@@ -390,7 +390,7 @@ Serve per configurare il pin per il pulsante di controllo delle connessioni
 
 #### `startOTA`
 
-```c++
+```{cpp}
 void startOTA()
 ```
 
@@ -404,7 +404,7 @@ Inizializza l'updater Over The Air (OTA)
 
 #### `startWebServer`
 
-```c++
+```{cpp}
 void startWebServer()
 ```
 
@@ -413,3 +413,9 @@ Inizializza il WebServer
 > Parametri: `void`
 
 > Return: `void`
+
+## Documentation
+ - [ConnectionManager.cpp](#ConnectionManager.cpp)
+
+### Functions
+ - [setWPSConfig](#ConnectionManager::setWPSConfig)

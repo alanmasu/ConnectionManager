@@ -1,3 +1,13 @@
+/*! 
+ * @file     ConnectionManager.cpp
+ * @brief    ConnectionManager class implementation
+ * @details  This file implements the ConnectionManager class
+ * @version  1.0.0
+ * @date     2019-10-01
+ * @authors  Alan Masutti
+*/
+
+
 
 #include "ConnectionManager.h"
 #include <Arduino.h>
@@ -91,6 +101,13 @@ void ConnectionManager::setReconnectTimeout(uint16_t time) {
 void ConnectionManager::setWPSBlinkInterval(uint16_t time) {
   WPSBlinkInterval = time;
 }
+
+/*!
+  * @brief Set the WPS config struct
+  * @param spech: pointer to the esp_wps_config_t struct
+  * @param isNotDefault: true if the config is not the default one
+  * @return void
+*/
 
 void ConnectionManager::setWPSConfig(esp_wps_config_t *spech, bool isNotDefault) {
   config = spech;
