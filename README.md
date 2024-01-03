@@ -17,7 +17,7 @@ Questa libreria utilizza principalmente un LED ed un solo pulsante per interfacc
 
 La connessione WPS è un metodo di connessione ottimo per le tecnologie IoT, infatti non prevede la necessità di dover inserire password e/o codici, basta solamente impostare il proprio router in modalità accoppiamento e abilitare lo stesso sulla scheda.
 
-**Per utilizzare questa funzione è necessario impostare nel software la configurazione del WPS tramite [setWPSConfig](#ConnectionManager::setWPSConfig)**
+**Per utilizzare questa funzione è necessario impostare nel software la configurazione del WPS tramite [setWPSConfig](#setWPSConfig)**
 
 Per connettere tramite WPS la scheda è necessario:
 
@@ -50,7 +50,7 @@ virtual void startConnection(bool withWPS, bool tryReconnection)
 
 Tenta la connessione all'ultima rete alla quale la scheda è stata connessa, esegue 8 tentativi a distanza di `WiFiIntervalTraConnetion` millisecondi (modificabile tramite [setReconnectTimeout](#setReconnectTimeout)), e se alla fine del processo non risulta connessa, viene abilitato il WPS e successivamente il parametro `tryReconnection` ne identifica il comportamento.
 
-**Se si intende utilizzare il WPS deve essere preceduta da [setWPSConfig](#setWPSConfig) **
+**Se si intende utilizzare il WPS deve essere preceduta da [setWPSConfig](#setWPSConfig)**
 
 > Parametri: 
 
@@ -81,7 +81,7 @@ Esegue la connessione ad una specifica rete che viene settata mediante i paramet
 
 ***
 
-### <a name="ConnectionManager::setWPSConfig"></a>`setWPSConfig`
+### `setWPSConfig`
 
 ```{cpp}
 void setWPSConfig(esp_wps_config_t *spech, bool isNotDefault)
@@ -414,8 +414,8 @@ Inizializza il WebServer
 
 > Return: `void`
 
-## Documentation
+<!-- ## Documentation
  - [ConnectionManager.cpp](#ConnectionManager.cpp)
 
 ### Functions
- - [setWPSConfig](#ConnectionManager::setWPSConfig)
+ - [setWPSConfig](#ConnectionManager::setWPSConfig) -->
